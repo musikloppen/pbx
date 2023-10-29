@@ -6,9 +6,9 @@ use DBI;
 
 my $caller_id = $ARGV[0];
 
-my $dbi = 'DBI:mysql:database=' . $ENV{MYSQL_DATABASE} . ';host=db;port=3306';
+my $dbi = 'DBI:mysql:database=$MYSQL_DATABASE;host=db;port=3306';
 
-my $dbh = DBI->connect($dbi, $ENV{MYSQL_USER}, $ENV{MYSQL_PASSWORD}, { mysql_auto_reconnect => 1, mysql_enable_utf8 => 1 }) || die $!;
+my $dbh = DBI->connect($dbi, $MYSQL_USER, $MYSQL_PASSWORD, { mysql_auto_reconnect => 1, mysql_enable_utf8 => 1 }) || die $!;
 
 # check if caller id is present and longer than 8 numbers
 if (length($caller_id) < 8) {
