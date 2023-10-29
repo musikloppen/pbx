@@ -1,6 +1,8 @@
 ## Build details
 
-cp docker-compose.yml.example to docker-compose.yml and edit login and password stuff
+cp docker-compose.yml.example docker-compose.yml
+
+and edit login and password stuff
 
 docker-compose up --build
 
