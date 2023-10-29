@@ -6,7 +6,7 @@ use DBI;
 
 my $caller_id = $ARGV[0];
 
-my $dbi = 'DBI:mysql:database=' . $ENV{MYSQL_DATABASE} . 'pbx;host=db;port=3306';
+my $dbi = 'DBI:mysql:database=' . $ENV{MYSQL_DATABASE} . ';host=db;port=3306';
 
 my $dbh = DBI->connect($dbi, $ENV{MYSQL_USER}, $ENV{MYSQL_PASSWORD}, { mysql_auto_reconnect => 1, mysql_enable_utf8 => 1 }) || die $!;
 
