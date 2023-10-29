@@ -1,0 +1,49 @@
+version: '3'
+
+services:
+  pbx:
+    build: '.'
+    container_name: pbx
+    privileged: true
+    ports:
+      - 5060:5060/udp
+      - 5160:5160/udp
+      - 10000-10100:10000-10100/udp
+    depends_on:
+      - db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: [password]
+      MYSQL_DATABASE: pbx
+      MYSQL_USER: pbx
+      MYSQL_PASSWORD: [password]
+      SIP_TRUNK_USERNAME: [username]
+      SIP_TRUNK_SECRET: [secret]
+      SIP_TRUNK_HOST: [host]
+      TZ: 'Europe/Copenhagen'
+  db:
+    image: mariadb:10.5
+    container_name: db
+    ports:
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - ./my.cnf:/etc/mysql/my.cnf
+      - ./db_data:/var/lib/mysql:delegated
+      - ./pbx.sql:/pbx.sql
+      - ./pbx_setup.sh:/pbx_setup.sh
+      - ./pbx_import.sh:/pbx_import.sh
+    restart: always
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+    environment:
+      MYSQL_ROOT_PASSWORD: [password]
+      MYSQL_DATABASE: pbx
+      MYSQL_USER: pbx
+      MYSQL_PASSWORD: [password]
+      TZ: 'Europe/Copenhagen'
+networks:
+  default:
+    name: pbx
+    external: true
