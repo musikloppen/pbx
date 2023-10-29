@@ -1,5 +1,7 @@
 ## Build details
 
+cp docker-compose.yml.example to docker-compose.yml and edit login and password stuff
+
 docker-compose up --build
 
 To initialize db (only do it first time!):
