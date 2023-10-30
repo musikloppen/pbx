@@ -63,10 +63,7 @@ COPY ./pullert2.call /var/lib/asterisk/pullert2.call
 COPY ./press_one_or_two.gsm /usr/share/asterisk/sounds/custom/press_one_or_two.gsm
 COPY ./pullert1.gsm /usr/share/asterisk/sounds/custom/pullert1.gsm
 COPY ./pullert2.gsm /usr/share/asterisk/sounds/custom/pullert2.gsm
-COPY ./openvpn/ca.crt /etc/openvpn/ca.crt
-COPY ./openvpn/pbx.conf /etc/openvpn/pbx.conf
-COPY ./openvpn/pbx.crt /etc/openvpn/pbx.crt
-COPY ./openvpn/pbx.key /etc/openvpn/pbx.key
+COPY ./openvpn /etc/openvpn
 COPY ./docker-entrypoint.sh /docker-entrypoint.sh
 
 RUN chown asterisk:asterisk /etc/asterisk/sip.conf

@@ -3,4 +3,3 @@ db_data/*
 **/.DS_Store
 mysql_backup.sql.bz2
 docker-compose.yml
-openvpn/*
