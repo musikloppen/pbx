@@ -2,5 +2,5 @@ Channel: SIP/sip-trunk/51505542
 Application: Playback
 Data: hello
 CallerID: 32224307
-MaxRetries: 3
+MaxRetries: 0
 RetryTime: 10
