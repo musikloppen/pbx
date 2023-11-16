@@ -1,6 +1,6 @@
-Channel: SIP/sip-trunk/51668105
+Channel: SIP/sip-trunk/$GATE_2_PHONE
 Application: Playback
 Data: hello
-CallerID: 32224307
+CallerID: $SIP_TRUNK_CALLER_ID
 MaxRetries: 0
 RetryTime: 10

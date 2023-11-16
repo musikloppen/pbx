@@ -20,6 +20,9 @@ services:
       SIP_TRUNK_USERNAME: [username]
       SIP_TRUNK_SECRET: [secret]
       SIP_TRUNK_HOST: [host]
+      SIP_TRUNK_CALLER_ID: 12345678
+      GATE_1_PHONE: 11111111
+      GATE_2_PHONE: 22222222
       TZ: 'Europe/Copenhagen'
   db:
     image: mariadb:10.5
