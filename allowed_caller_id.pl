@@ -10,12 +10,14 @@ my $dbi = 'DBI:mysql:database=$MYSQL_DATABASE;host=db;port=3306';
 
 my $dbh = DBI->connect($dbi, '$MYSQL_USER', '$MYSQL_PASSWORD', { mysql_auto_reconnect => 1, mysql_enable_utf8 => 1 }) || die $!;
 
+my $quoted_caller_id = $dbh->quote($caller_id);
+
+$dbh->do(qq[INSERT INTO log (`caller_id`, `event`, `unix_time`) VALUES ($quoted_caller_id, 'called', UNIX_TIMESTAMP())]) || die $!;
+
 # check if caller id is present and longer than 8 numbers
 if (length($caller_id) < 8) {
 	die;
 }
-
-my $quoted_caller_id = $dbh->quote($caller_id);
 
 # check if caller id is in db
 my $sth = $dbh->prepare(qq[SELECT COUNT(*) FROM `access` WHERE `enabled` \
@@ -26,8 +28,10 @@ my $sth = $dbh->prepare(qq[SELECT COUNT(*) FROM `access` WHERE `enabled` \
 $sth->execute || die $!;
 
 if ($sth->fetchrow_array > 0) {
+	$dbh->do(qq[INSERT INTO log (`caller_id`, `event`, `unix_time`) VALUES ($quoted_caller_id, 'allowed', UNIX_TIMESTAMP())]) || die $!;
 	exit 0;
 }
 else {
+	$dbh->do(qq[INSERT INTO log (`caller_id`, `event`, `unix_time`) VALUES ($quoted_caller_id, 'not allowed', UNIX_TIMESTAMP())]) || die $!;
 	exit 1;
 }

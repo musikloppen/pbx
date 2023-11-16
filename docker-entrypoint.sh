@@ -8,6 +8,10 @@ perl -pi -e 's/\$MYSQL_DATABASE/$ENV{MYSQL_DATABASE}/g' /var/lib/asterisk/allowe
 perl -pi -e 's/\$MYSQL_USER/$ENV{MYSQL_USER}/g' /var/lib/asterisk/allowed_caller_id.pl
 perl -pi -e 's/\$MYSQL_PASSWORD/$ENV{MYSQL_PASSWORD}/g' /var/lib/asterisk/allowed_caller_id.pl
 
+perl -pi -e 's/\$MYSQL_DATABASE/$ENV{MYSQL_DATABASE}/g' /var/lib/asterisk/log.pl
+perl -pi -e 's/\$MYSQL_USER/$ENV{MYSQL_USER}/g' /var/lib/asterisk/log.pl
+perl -pi -e 's/\$MYSQL_PASSWORD/$ENV{MYSQL_PASSWORD}/g' /var/lib/asterisk/log.pl
+
 service asterisk start
 service openvpn start
 

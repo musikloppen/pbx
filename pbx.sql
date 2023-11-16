@@ -1,13 +1,13 @@
 # ************************************************************
 # Sequel Ace SQL dump
-# Version 20057
+# Version 20059
 #
 # https://sequel-ace.com/
 # https://github.com/Sequel-Ace/Sequel-Ace
 #
-# Host: 127.0.0.1 (MySQL 5.5.5-10.5.22-MariaDB-1:10.5.22+maria~ubu2004-log)
+# Host: 127.0.0.1 (MySQL 5.5.5-10.5.9-MariaDB-1:10.5.9+maria~focal-log)
 # Database: pbx
-# Generation Time: 2023-10-29 03:11:07 +0000
+# Generation Time: 2023-11-16 01:14:56 +0000
 # ************************************************************
 
 
@@ -37,7 +37,21 @@ CREATE TABLE `access` (
   `comment` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `telephone_idx` (`telephone`)
-) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+
+# Dump of table log
+# ------------------------------------------------------------
+
+CREATE TABLE `log` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `caller_id` varchar(16) DEFAULT NULL,
+  `event` varchar(256) DEFAULT NULL,
+  `unix_time` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
 
 
 
