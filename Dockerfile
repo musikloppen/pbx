@@ -59,11 +59,11 @@ COPY ./allowed_caller_id.pl /var/lib/asterisk/allowed_caller_id.pl
 COPY ./log.pl /var/lib/asterisk/log.pl
 COPY ./smstools_send.pl /var/lib/asterisk/smstools_send.pl
 COPY ./notify_user.pl /var/lib/asterisk/notify_user.pl
-COPY ./pullert1.call /var/lib/asterisk/pullert1.call
-COPY ./pullert2.call /var/lib/asterisk/pullert2.call
+COPY ./gate1.call /var/lib/asterisk/gate1.call
+COPY ./gate2.call /var/lib/asterisk/gate2.call
 COPY ./press_one_or_two.gsm /usr/share/asterisk/sounds/custom/press_one_or_two.gsm
-COPY ./pullert1.gsm /usr/share/asterisk/sounds/custom/pullert1.gsm
-COPY ./pullert2.gsm /usr/share/asterisk/sounds/custom/pullert2.gsm
+COPY ./gate1.gsm /usr/share/asterisk/sounds/custom/gate1.gsm
+COPY ./gate2.gsm /usr/share/asterisk/sounds/custom/gate2.gsm
 COPY ./openvpn /etc/openvpn
 COPY ./docker-entrypoint.sh /docker-entrypoint.sh
 
@@ -75,11 +75,11 @@ RUN chown asterisk:asterisk /var/lib/asterisk/allowed_caller_id.pl
 RUN chown asterisk:asterisk /var/lib/asterisk/log.pl
 RUN chown asterisk:asterisk /var/lib/asterisk/smstools_send.pl
 RUN chown asterisk:asterisk /var/lib/asterisk/notify_user.pl
-RUN chown asterisk:asterisk /var/lib/asterisk/pullert1.call
-RUN chown asterisk:asterisk /var/lib/asterisk/pullert2.call
+RUN chown asterisk:asterisk /var/lib/asterisk/gate1.call
+RUN chown asterisk:asterisk /var/lib/asterisk/gate2.call
 RUN chown asterisk:asterisk /usr/share/asterisk/sounds/custom/press_one_or_two.gsm
-RUN chown asterisk:asterisk /usr/share/asterisk/sounds/custom/pullert1.gsm
-RUN chown asterisk:asterisk /usr/share/asterisk/sounds/custom/pullert2.gsm
+RUN chown asterisk:asterisk /usr/share/asterisk/sounds/custom/gate1.gsm
+RUN chown asterisk:asterisk /usr/share/asterisk/sounds/custom/gate2.gsm
 
 
 CMD /docker-entrypoint.sh
