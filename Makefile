@@ -19,7 +19,7 @@ cli:
 	docker exec -it pbx /usr/sbin/asterisk -rvvv
 
 setup:
-	docker exec -it db /pbx_setup.sh
+	docker exec -it pbx-db /pbx_setup.sh
 	
 clean_db:
 	rm -fr db_data/*

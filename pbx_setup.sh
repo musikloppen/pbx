@@ -10,6 +10,6 @@ echo "FLUSH PRIVILEGES" | mysql -h 127.0.0.1 -u root -p$MYSQL_ROOT_PASSWORD
 mysql_upgrade -h 127.0.0.1 -u root -p$MYSQL_ROOT_PASSWORD
 
 echo "import existing db by running:
-	docker cp mysql_backup.sql.bz2 db:/tmp/	
-	docker exec -it db /pbx_import.sh
+	docker cp mysql_backup.sql.bz2 pbx-db:/tmp/	
+	docker exec -it pbx-db /pbx_import.sh
 "

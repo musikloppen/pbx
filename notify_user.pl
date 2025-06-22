@@ -10,7 +10,7 @@ use constant ALLOW_MESSAGE => 'You now have access to open the gates. The teleph
 use constant DISALLOW_SOON_MESSAGE => 'Your access to the gate will expire DATE_TIME';
 use constant DISALLOW_MESSAGE => 'Your access to the gate has expired';
 
-my $dbi = 'DBI:mysql:database=' . $ENV{MYSQL_DATABASE} . ';host=db;port=3306';
+my $dbi = 'DBI:mysql:database=' . $ENV{MYSQL_DATABASE} . ';host=pbx-db;port=3306';
 my $dbh;
 my $sth;
 my $d;
