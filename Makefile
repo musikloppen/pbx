@@ -1,17 +1,17 @@
 all: build up
 
 build:
-	docker-compose build
+	docker compose build
 
 up:
 	docker network create pbx
-	docker-compose up -d
+	docker compose up -d
 
 log:
-	docker-compose logs -f
+	docker compose logs -f
 
 down:
-	docker-compose down
+	docker compose down
 	docker network rm pbx
 
 sh:
