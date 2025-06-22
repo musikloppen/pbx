@@ -4,7 +4,6 @@ build:
 	docker compose build
 
 up:
-	docker network create pbx
 	docker compose up -d
 
 log:
@@ -12,7 +11,6 @@ log:
 
 down:
 	docker compose down
-	docker network rm pbx
 
 sh:
 	docker exec -it pbx /bin/bash
