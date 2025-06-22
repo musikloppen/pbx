@@ -22,7 +22,7 @@ services:
       GATE_1_PHONE: 11111111
       GATE_2_PHONE: 22222222
       TZ: 'Europe/Copenhagen'
-  db:
+  pbx-db:
     image: mariadb:10.5
     container_name: db
     ports:
