@@ -21,6 +21,7 @@ services:
       SIP_TRUNK_CALLER_ID: ${SIP_TRUNK_CALLER_ID}
       GATE_1_PHONE: ${GATE_1_PHONE}
       GATE_2_PHONE: ${GATE_2_PHONE}
+      SMTP_HOST: ${SMTP_HOST}
       TZ: 'Europe/Copenhagen'
   pbx-db:
     image: mariadb:10.5
