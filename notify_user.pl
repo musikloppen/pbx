@@ -94,8 +94,10 @@ sub send_notify {
 	my ($telephone, $message) = @_;
 	my $smtp;
 	
+	my $smtp_host = $ENV{SMTP_HOST} || 'postfix';
+
 	eval {
-		$smtp = Net::SMTP->new('postfix');
+		$smtp = Net::SMTP->new($smtp_host);
 		$smtp->mail('meterlogger');
 		$smtp->to('45' . $d->{telephone} . '@meterlogger');
 		$smtp->data();

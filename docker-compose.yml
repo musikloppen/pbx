@@ -11,22 +11,22 @@ services:
       - pbx-db
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: [password]
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: pbx
       MYSQL_USER: pbx
-      MYSQL_PASSWORD: [password]
-      SIP_TRUNK_USERNAME: [username]
-      SIP_TRUNK_SECRET: [secret]
-      SIP_TRUNK_HOST: [host]
-      SIP_TRUNK_CALLER_ID: 12345678
-      GATE_1_PHONE: 11111111
-      GATE_2_PHONE: 22222222
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      SIP_TRUNK_USERNAME: ${SIP_TRUNK_USERNAME}
+      SIP_TRUNK_SECRET: ${SIP_TRUNK_SECRET}
+      SIP_TRUNK_HOST: ${SIP_TRUNK_HOST}
+      SIP_TRUNK_CALLER_ID: ${SIP_TRUNK_CALLER_ID}
+      GATE_1_PHONE: ${GATE_1_PHONE}
+      GATE_2_PHONE: ${GATE_2_PHONE}
       TZ: 'Europe/Copenhagen'
   pbx-db:
     image: mariadb:10.5
     container_name: pbx-db
     ports:
-      - "127.0.0.1:3306:3306"
+      - "127.0.0.1:3307:3306"
     volumes:
       - ./my.cnf:/etc/mysql/my.cnf
       - ./db_data:/var/lib/mysql:delegated
@@ -39,8 +39,8 @@ services:
       timeout: 20s
       retries: 10
     environment:
-      MYSQL_ROOT_PASSWORD: [password]
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: pbx
       MYSQL_USER: pbx
-      MYSQL_PASSWORD: [password]
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       TZ: 'Europe/Copenhagen'
