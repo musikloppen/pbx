@@ -147,110 +147,109 @@ sub login_handler {
 		my $state = lc($d->{auth_state} || '');
 		warn sprintf("[SMSAuth STATE] Found existing session token. Current auth_state: '%s'\n", $state);
 
-		if ($state eq 'new') {
-			my $sql_update_new = qq[UPDATE sms_auth SET auth_state = 'login', unix_time = ] . time() . qq[ WHERE cookie_token = $quoted_token];
-			warn sprintf("[SMSAuth DB EXEC] %s\n", $sql_update_new);
-			my $rows = $dbh->do($sql_update_new);
-			warn sprintf("[SMSAuth DB RESULT] Affected rows: %s\n", $rows // '0');
-
-			warn sprintf("[SMSAuth STATE new] Redirecting to login_path (%s)\n", $self->login_path);
-			return $self->redirect_with_cookie($self->login_path, $set_cookie_header);
-		}
-		elsif ($state eq 'login') {
-			# Allow GET requests to render the login HTML form
-			if ($req->method eq 'GET' && $req->path_info eq $self->login_path) {
-				warn sprintf("[SMSAuth STATE login] GET request received. Serving login HTML form (%s)\n", $self->login_path);
-				return $self->app->($env);
-			}
-
-			my $phone = $req->param('id');
-			warn sprintf("[SMSAuth STATE login] Submitted phone parameter 'id': %s\n", $phone || '<NONE>');
-
-			my $user_is_in_db = 0;
-
-			if ($phone) {
-				my $quoted_phone = $dbh->quote($phone);
-				
-				# Check access table strictly for enabled user matching telephone
-				my $sql_access = qq[SELECT `telephone` FROM access WHERE `enabled` = 1 AND `telephone` = $quoted_phone LIMIT 1];
-				warn sprintf("[SMSAuth DB QUERY] Executing: %s\n", $sql_access);
-				my $s2 = $dbh->prepare($sql_access);
-				$s2->execute;
-				$user_is_in_db = $s2->rows;
-				warn sprintf("[SMSAuth DB RESULT] Access table match count: %d\n", $user_is_in_db);
-			}
-
-			if ($user_is_in_db) {
-				my $sms_code = join('', map { int(Math::Random::Secure::rand(10)) } 1 .. 6);
-				warn sprintf("[SMSAuth STATE login] Phone verified! Generated SMS Code: %s\n", $sms_code);
-
-				my $sql_update_login = qq[UPDATE sms_auth SET `auth_state` = 'sms_code_sent', `sms_code` = ] . $dbh->quote($sms_code) . qq[, `phone` = ] . $dbh->quote($phone) . qq[, unix_time = ] . time() . qq[ WHERE cookie_token = $quoted_token];
-				warn sprintf("[SMSAuth DB EXEC] %s\n", $sql_update_login);
-				my $rows = $dbh->do($sql_update_login);
-				warn sprintf("[SMSAuth DB RESULT] Affected rows: %s\n", $rows // '0');
-
-				my $session_cookie = CGI::Simple::Cookie->new(
-					-name     => 'auth_token',
-					-value    => $cookie_token,
-					-httponly => 1,
-					-secure   => 0
-				)->as_string;
-
-				warn sprintf("[SMSAuth STATE login] Redirecting to sms_code_path (%s)\n", $self->sms_code_path);
-				return $self->redirect_with_cookie($self->sms_code_path, $session_cookie);
-			} else {
-				warn sprintf("[SMSAuth STATE login] Phone number '%s' NOT matched in access table. Re-rendering login form (%s)\n", $phone || '<NONE>', $self->login_path);
-				$env->{PATH_INFO} = $self->login_path;
-				return $self->app->($env);
-			}
-		}
-		elsif ($state eq 'sms_code_sent') {
-			# Allow GET requests to render the SMS code HTML page
-			if ($req->method eq 'GET' && $req->path_info eq $self->sms_code_path) {
-				warn sprintf("[SMSAuth STATE sms_code_sent] GET request received. Serving SMS code HTML form (%s)\n", $self->sms_code_path);
-				return $self->app->($env);
-			}
-
-			my $sms_code       = $req->param('sms_code');
-			my $stay_logged_in = $req->param('stay_logged_in');
-
-			warn sprintf("[SMSAuth STATE sms_code_sent] Submitted sms_code: '%s' | stay_logged_in: '%s'\n", $sms_code || '<NONE>', $stay_logged_in || 'false');
-
-			my $cookie_opts = { -name => 'auth_token', -value => ($passed_cookie_token || ''), -httponly => 1, -secure => 0 };
-			$cookie_opts->{-expires} = '+1y' if $stay_logged_in;
-			my $auth_cookie = CGI::Simple::Cookie->new(%$cookie_opts)->as_string;
-
-			my $sql_verify_code = qq[SELECT `sms_code`, `orig_uri` FROM sms_auth WHERE `cookie_token` LIKE $quoted_token AND `sms_code` LIKE ] . $dbh->quote($sms_code) . qq[ LIMIT 1];
-			warn sprintf("[SMSAuth DB QUERY] Executing: %s\n", $sql_verify_code);
-			my $c_sth = $dbh->prepare($sql_verify_code);
-			$c_sth->execute;
-
-			if (my $cd = $c_sth->fetchrow_hashref) {
-				warn sprintf("[SMSAuth STATE sms_code_sent] SMS code MATCHED! Target orig_uri: %s\n", $cd->{orig_uri} || $self->default_path);
-
-				my $sql_update_verified = qq[UPDATE sms_auth SET `auth_state` = 'sms_code_verified', `session` = ] . ($stay_logged_in ? 0 : 1) . qq[, unix_time = ] . time() . qq[ WHERE cookie_token = $quoted_token];
-				warn sprintf("[SMSAuth DB EXEC] %s\n", $sql_update_verified);
-				my $rows = $dbh->do($sql_update_verified);
-				warn sprintf("[SMSAuth DB RESULT] Affected rows: %s\n", $rows // '0');
-
-				$self->log_admin_event($dbh, $req, 'login', $quoted_token);
-				return $self->redirect_with_cookie($cd->{orig_uri}, $auth_cookie);
-			} else {
-				warn sprintf("[SMSAuth STATE sms_code_sent] Invalid SMS code. Internal forward to sms_code_path (%s)\n", $self->sms_code_path);
-				$env->{PATH_INFO} = $self->sms_code_path;
-				return $self->app->($env);
-			}
-		}
-		elsif ($state eq 'sms_code_verified') {
+		# 1. Fully Authenticated Access
+		if ($state eq 'sms_code_verified') {
 			warn sprintf("[SMSAuth STATE sms_code_verified] User authenticated. Access granted to: %s\n", $req->path_info);
 			my $sql_touch_time = qq[UPDATE sms_auth SET unix_time = ] . time() . qq[ WHERE cookie_token = $quoted_token];
-			warn sprintf("[SMSAuth DB EXEC] %s\n", $sql_touch_time);
 			$dbh->do($sql_touch_time);
 
 			return $self->app->($env);
 		}
+
+		# 2. Allow access to login form and SMS code page during login flow
+		if ($req->path_info eq $self->login_path) {
+			if ($state eq 'new') {
+				my $sql_update_new = qq[UPDATE sms_auth SET auth_state = 'login', unix_time = ] . time() . qq[ WHERE cookie_token = $quoted_token];
+				warn sprintf("[SMSAuth DB EXEC] %s\n", $sql_update_new);
+				$dbh->do($sql_update_new);
+			}
+
+			# Submit phone number form
+			if ($req->method eq 'POST') {
+				my $phone = $req->param('id');
+				warn sprintf("[SMSAuth STATE login] Submitted phone parameter 'id': %s\n", $phone || '<NONE>');
+
+				my $user_is_in_db = 0;
+				if ($phone) {
+					my $quoted_phone = $dbh->quote($phone);
+					my $sql_access = qq[SELECT `telephone` FROM access WHERE `enabled` = 1 AND `telephone` = $quoted_phone LIMIT 1];
+					warn sprintf("[SMSAuth DB QUERY] Executing: %s\n", $sql_access);
+					my $s2 = $dbh->prepare($sql_access);
+					$s2->execute;
+					$user_is_in_db = $s2->rows;
+					warn sprintf("[SMSAuth DB RESULT] Access table match count: %d\n", $user_is_in_db);
+				}
+
+				if ($user_is_in_db) {
+					my $sms_code = join('', map { int(Math::Random::Secure::rand(10)) } 1 .. 6);
+					warn sprintf("[SMSAuth STATE login] Phone verified! Generated SMS Code: %s\n", $sms_code);
+
+					my $sql_update_login = qq[UPDATE sms_auth SET `auth_state` = 'sms_code_sent', `sms_code` = ] . $dbh->quote($sms_code) . qq[, `phone` = ] . $dbh->quote($phone) . qq[, unix_time = ] . time() . qq[ WHERE cookie_token = $quoted_token];
+					warn sprintf("[SMSAuth DB EXEC] %s\n", $sql_update_login);
+					$dbh->do($sql_update_login);
+
+					my $session_cookie = CGI::Simple::Cookie->new(
+						-name     => 'auth_token',
+						-value    => $cookie_token,
+						-httponly => 1,
+						-secure   => 0
+					)->as_string;
+
+					warn sprintf("[SMSAuth STATE login] Redirecting to sms_code_path (%s)\n", $self->sms_code_path);
+					return $self->redirect_with_cookie($self->sms_code_path, $session_cookie);
+				} else {
+					warn sprintf("[SMSAuth STATE login] Phone number '%s' NOT matched in access table. Re-rendering login form (%s)\n", $phone || '<NONE>', $self->login_path);
+					$env->{PATH_INFO} = $self->login_path;
+					return $self->app->($env);
+				}
+			}
+
+			# GET request to render login HTML page
+			return $self->app->($env);
+		}
+
+		if ($req->path_info eq $self->sms_code_path) {
+			if ($state eq 'sms_code_sent' && $req->method eq 'POST') {
+				my $sms_code       = $req->param('sms_code');
+				my $stay_logged_in = $req->param('stay_logged_in');
+
+				warn sprintf("[SMSAuth STATE sms_code_sent] Submitted sms_code: '%s' | stay_logged_in: '%s'\n", $sms_code || '<NONE>', $stay_logged_in || 'false');
+
+				my $cookie_opts = { -name => 'auth_token', -value => ($passed_cookie_token || ''), -httponly => 1, -secure => 0 };
+				$cookie_opts->{-expires} = '+1y' if $stay_logged_in;
+				my $auth_cookie = CGI::Simple::Cookie->new(%$cookie_opts)->as_string;
+
+				my $sql_verify_code = qq[SELECT `sms_code`, `orig_uri` FROM sms_auth WHERE `cookie_token` LIKE $quoted_token AND `sms_code` LIKE ] . $dbh->quote($sms_code) . qq[ LIMIT 1];
+				warn sprintf("[SMSAuth DB QUERY] Executing: %s\n", $sql_verify_code);
+				my $c_sth = $dbh->prepare($sql_verify_code);
+				$c_sth->execute;
+
+				if (my $cd = $c_sth->fetchrow_hashref) {
+					warn sprintf("[SMSAuth STATE sms_code_sent] SMS code MATCHED! Target orig_uri: %s\n", $cd->{orig_uri} || $self->default_path);
+
+					my $sql_update_verified = qq[UPDATE sms_auth SET `auth_state` = 'sms_code_verified', `session` = ] . ($stay_logged_in ? 0 : 1) . qq[, unix_time = ] . time() . qq[ WHERE cookie_token = $quoted_token];
+					warn sprintf("[SMSAuth DB EXEC] %s\n", $sql_update_verified);
+					$dbh->do($sql_update_verified);
+
+					$self->log_admin_event($dbh, $req, 'login', $quoted_token);
+					return $self->redirect_with_cookie($cd->{orig_uri}, $auth_cookie);
+				} else {
+					warn sprintf("[SMSAuth STATE sms_code_sent] Invalid SMS code. Internal forward to sms_code_path (%s)\n", $self->sms_code_path);
+					$env->{PATH_INFO} = $self->sms_code_path;
+					return $self->app->($env);
+				}
+			}
+
+			# GET request to render SMS code form
+			return $self->app->($env);
+		}
+
+		# 3. Unauthenticated access to protected path -> Redirect to login page
+		warn sprintf("[SMSAuth STATE %s] Unauthenticated attempt to access '%s'. Redirecting to login_path (%s)\n", $state, $req->path_info, $self->login_path);
+		return $self->redirect_with_cookie($self->login_path, $set_cookie_header);
 	}
 	else {
+		# No session record in DB -> Create initial session and redirect to login
 		warn sprintf("[SMSAuth STATE new] No session record found for cookie token '%s'. Creating session\n", $cookie_token);
 
 		my $remote_host = $req->header('X-Real-IP') || $req->header('X-Forwarded-For') || $req->address;
@@ -268,8 +267,7 @@ sub login_handler {
 			VALUES (] . $dbh->quote($cookie_token) . qq[, 'new', ] . $dbh->quote($target_uri) . qq[, ] . $dbh->quote($remote_host) . qq[, ] . $dbh->quote($user_agent) . qq[, ] . time() . qq[)
 		];
 		warn sprintf("[SMSAuth DB EXEC] %s\n", $sql_insert_session);
-		my $rows = $dbh->do($sql_insert_session);
-		warn sprintf("[SMSAuth DB RESULT] Inserted %s row(s)\n", $rows // '0');
+		$dbh->do($sql_insert_session);
 
 		return $self->redirect_with_cookie($self->login_path, $set_cookie_header);
 	}

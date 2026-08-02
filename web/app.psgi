@@ -5,23 +5,34 @@ use Plack::App::File;
 
 use SMSAuth;
 
-# 1. Base application: serves any file on disk out of /var/www/www
-# Plack::App::File automatically handles MIME types, streaming, and 404s
-my $app = Plack::App::File->new(
-	root  => '/var/www/www',
-	index => ['index.html', 'index.htm', 'admin.epl']
+my $root_dir = '/var/www/www';
+
+# 1. Base static file app
+my $file_app = Plack::App::File->new(
+	root => $root_dir
 )->to_app;
 
-# 2. Outer SMSAuth authentication middleware
-# Intercepts every request first:
-# - Unauthenticated -> Executes state machine / redirects
-# - Authenticated   -> Passes through to Plack::App::File to serve the requested path
-$app = SMSAuth->new(
+# 2. Inner app: Rewrites directories to index.html ONLY after passing auth
+my $protected_app = sub {
+	my $env = shift;
+	my $path = $env->{PATH_INFO} || '/';
+
+	# If target path on disk is a directory, append index.html
+	if (-d ($root_dir . $path)) {
+		$path .= '/' unless $path =~ m{/$};
+		$env->{PATH_INFO} = "${path}index.html";
+	}
+
+	return $file_app->($env);
+};
+
+# 3. Outer SMSAuth authentication middleware (intercepts EVERYTHING first)
+my $app = SMSAuth->new(
 	default_path      => '/',
 	login_path        => '/private/login.html',
 	logged_out_path   => '/logged_out.html',
 	sms_code_path     => '/private/sms_code.html',
 	public_access     => '/logged_out.html, /404.html',
-)->wrap($app);
+)->wrap($protected_app);
 
 return $app;
