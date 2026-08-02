@@ -70,16 +70,6 @@ sub call {
 
 	warn sprintf("[SMSAuth CALL] Method: %s | Request URI: %s | Path Info: %s\n", $req->method, $orig_uri, $path);
 
-	# Bypass snooze page/API paths if configured
-	if ($self->snooze_page && $orig_uri =~ /^${\$self->snooze_page}/) {
-		warn sprintf("[SMSAuth BYPASS] Snooze page match: %s\n", $self->snooze_page);
-		return $self->app->($env);
-	}
-	if ($self->snooze_api && $orig_uri =~ /^${\$self->snooze_api}/) {
-		warn sprintf("[SMSAuth BYPASS] Snooze API match: %s\n", $self->snooze_api);
-		return $self->app->($env);
-	}
-
 	# Bypass configured public paths
 	foreach my $pub (@{ $self->public_access }) {
 		if ($path eq $pub) {
