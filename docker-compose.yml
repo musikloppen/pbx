@@ -1,47 +1,94 @@
 services:
+  # Nginx Frontend
+  web:
+    image: nginx:bookworm
+    container_name: web
+    ports:
+      - "80:80"
+    volumes:
+      - ./web/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./web/public:/var/www/public:ro
+    depends_on:
+      - app
+    restart: always
+
+  # Perl PSGI Application Backend
+  app:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: app
+    environment:
+      NOTIFICATION_SMS_CODE_MESSAGE: "SMS Code: {sms_code}"
+      DB_HOST: "pbx-db"
+      DB_NAME: "pbx"
+      DB_USER: "pbx"
+      DB_PASS: "${MYSQL_PASSWORD}"
+      ASTERISK_HOST: "pbx"
+      ASTERISK_AMI_PORT: "5038"
+      TZ: "Europe/Copenhagen"
+    volumes:
+      - ./web:/var/www
+      - sms_spool:/var/www/sms_spool
+    depends_on:
+      pbx-db:
+        condition: service_healthy
+      pbx:
+        condition: service_started
+    restart: always
+
+  # Asterisk PBX
   pbx:
-    build: '.'
+    build:
+      context: ./pbx
+      dockerfile: Dockerfile
     container_name: pbx
     privileged: true
     ports:
-      - 5060:5060/udp
-      - 5160:5160/udp
-      - 10000-10100:10000-10100/udp
+      - "5060:5060/udp"
+      - "5160:5160/udp"
+      - "10000-10100:10000-10100/udp"
     depends_on:
       - pbx-db
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: pbx
-      MYSQL_USER: pbx
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      SIP_TRUNK_USERNAME: ${SIP_TRUNK_USERNAME}
-      SIP_TRUNK_SECRET: ${SIP_TRUNK_SECRET}
-      SIP_TRUNK_HOST: ${SIP_TRUNK_HOST}
-      SIP_TRUNK_CALLER_ID: ${SIP_TRUNK_CALLER_ID}
-      GATE_1_PHONE: ${GATE_1_PHONE}
-      GATE_2_PHONE: ${GATE_2_PHONE}
-      SMTP_HOST: ${SMTP_HOST}
-      TZ: 'Europe/Copenhagen'
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+      MYSQL_DATABASE: "pbx"
+      MYSQL_USER: "pbx"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
+      SIP_TRUNK_USERNAME: "${SIP_TRUNK_USERNAME}"
+      SIP_TRUNK_SECRET: "${SIP_TRUNK_SECRET}"
+      SIP_TRUNK_HOST: "${SIP_TRUNK_HOST}"
+      SIP_TRUNK_CALLER_ID: "${SIP_TRUNK_CALLER_ID}"
+      GATE_1_PHONE: "${GATE_1_PHONE}"
+      GATE_2_PHONE: "${GATE_2_PHONE}"
+      SMTP_HOST: "${SMTP_HOST}"
+      TZ: "Europe/Copenhagen"
+
+  # MariaDB Database
   pbx-db:
     image: mariadb:10.5
     container_name: pbx-db
     ports:
       - "127.0.0.1:3307:3306"
     volumes:
-      - ./my.cnf:/etc/mysql/my.cnf
+      - ./pbx/my.cnf:/etc/mysql/my.cnf
       - ./db_data:/var/lib/mysql:delegated
-      - ./pbx.sql:/pbx.sql
-      - ./pbx_setup.sh:/pbx_setup.sh
-      - ./pbx_import.sh:/pbx_import.sh
+      - ./pbx/pbx.sql:/pbx.sql
+      - ./pbx/pbx_setup.sh:/pbx_setup.sh
+      - ./pbx/pbx_import.sh:/pbx_import.sh
     restart: always
     healthcheck:
-      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 20s
       retries: 10
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: pbx
-      MYSQL_USER: pbx
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      TZ: 'Europe/Copenhagen'
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+      MYSQL_DATABASE: "pbx"
+      MYSQL_USER: "pbx"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
+      TZ: "Europe/Copenhagen"
+
+volumes:
+  db_data:
+  sms_spool:

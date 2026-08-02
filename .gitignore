@@ -4,3 +4,4 @@ db_data/*
 mysql_backup.sql.bz2
 openvpn/*
 .env
+.env~
