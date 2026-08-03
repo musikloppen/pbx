@@ -16,15 +16,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 	libcgi-simple-perl \
 	libmath-random-secure-perl \
 	libjson-pp-perl \
+	libemail-mime-perl \
+	libnumber-phone-perl \
 	&& rm -rf /var/lib/apt/lists/*
 
 RUN cpanm -n Net::SMTP
 
 WORKDIR /var/www
 
-COPY app.psgi /var/www/app.psgi
+COPY My /var/www/My
 COPY SMSAuth.pm /var/www/SMSAuth.pm
-COPY www /var/www
+COPY app.psgi /var/www/app.psgi
+COPY www /var/www/www
 
 EXPOSE 5000
 

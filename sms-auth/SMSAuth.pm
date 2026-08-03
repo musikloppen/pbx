@@ -23,6 +23,130 @@ use Plack::Util::Accessor qw(
 	user_admin_access
 );
 
+use Net::SMTP;
+use Email::MIME;
+use Encode qw(decode is_utf8);
+
+use My::Number::Phone;
+
+# -------------------------------------------------------------------------
+# Embedded Helper: Send SMS via Configured SMTP Server
+# -------------------------------------------------------------------------
+sub send_notification {
+	my ($req, $sms_number, $message) = @_;
+	return 0 unless $sms_number && $message;
+
+	eval {
+		# Validate and normalize phone number
+		my $phone_obj = My::Number::Phone->new($sms_number);
+		unless ($phone_obj && $phone_obj->is_valid) {
+			warn "[SMSAuth WARN] Cannot send SMS: Invalid phone number format '$sms_number'\n";
+			return 0;
+		}
+
+		# Strictly enforce 00 prefix formatting (e.g., 004512345678)
+		$sms_number = $phone_obj->international;
+
+		# Check DEBUG mode
+		my $debug = $ENV{DEBUG};
+		if ($debug) {
+			warn "[SMSAuth DEBUG DRY-RUN] Skipping actual SMTP dispatch. SMS to $sms_number: \"$message\"\n";
+			return 1;
+		}
+
+		my $smtp_host = $ENV{SMTP_HOST};
+		my $smtp_port = $ENV{SMTP_PORT} || 25;
+
+		unless ($smtp_host) {
+			warn "[SMSAuth WARN] Mandatory environment variable missing: SMTP_HOST\n";
+			return 0;
+		}
+
+		unless (is_utf8($message)) {
+			$message = decode('UTF-8', $message);
+		}
+
+		my $email = Email::MIME->create(
+			header_str => [
+				From    => 'meterlogger@meterlogger',
+				To      => $sms_number . '@meterlogger',
+				Subject => $message,
+			],
+			attributes => {
+				encoding     => 'quoted-printable',
+				charset      => 'UTF-8',
+				content_type => 'text/plain',
+			},
+			body => '',
+		);
+
+		my %smtp_opts = (
+			Port    => $smtp_port,
+			Timeout => 10,
+		);
+		if ($smtp_port == 465) {
+			$smtp_opts{SSL} = 1;
+		}
+
+		my $smtp = Net::SMTP->new($smtp_host, %smtp_opts);
+		unless ($smtp) {
+			warn "[SMSAuth WARN] Cannot connect to SMTP server at $smtp_host:$smtp_port\n";
+			return 0;
+		}
+
+		my $smtp_user = $ENV{SMTP_USER};
+		my $smtp_pass = $ENV{SMTP_PASSWORD};
+		if ($smtp_user && $smtp_pass) {
+			unless ($smtp->auth($smtp_user, $smtp_pass)) {
+				warn "[SMSAuth WARN] SMTP AUTH failed: " . $smtp->message() . "\n";
+				$smtp->quit();
+				return 0;
+			}
+		}
+
+		unless ($smtp->mail('meterlogger@meterlogger')) {
+			warn "[SMSAuth WARN] SMTP MAIL FROM failed: " . $smtp->message() . "\n";
+			$smtp->quit();
+			return 0;
+		}
+
+		unless ($smtp->to("$sms_number\@meterlogger")) {
+			warn "[SMSAuth WARN] SMTP RCPT TO failed: " . $smtp->message() . "\n";
+			$smtp->quit();
+			return 0;
+		}
+
+		unless ($smtp->data()) {
+			warn "[SMSAuth WARN] SMTP DATA failed: " . $smtp->message() . "\n";
+			$smtp->quit();
+			return 0;
+		}
+
+		unless ($smtp->datasend($email->as_string)) {
+			warn "[SMSAuth WARN] SMTP DATASEND failed: " . $smtp->message() . "\n";
+			$smtp->quit();
+			return 0;
+		}
+
+		unless ($smtp->dataend()) {
+			warn "[SMSAuth WARN] SMTP DATAEND failed: " . $smtp->message() . "\n";
+			$smtp->quit();
+			return 0;
+		}
+
+		$smtp->quit();
+		warn "[SMSAuth INFO] SMS sent to $sms_number via $smtp_host\n";
+		return 1;
+	};
+
+	if ($@) {
+		warn "[SMSAuth WARN] Failed to send SMS to $sms_number: $@\n";
+		return 0;
+	}
+
+	return 1;
+}
+
 # Internal DB connector reading from Docker container environment
 sub _get_dbh {
 	my $db_host = $ENV{DB_HOST} || 'pbx-db';
@@ -156,12 +280,21 @@ sub login_handler {
 
 			# Submit phone number form
 			if ($req->method eq 'POST') {
-				my $phone = $req->param('id');
-				warn sprintf("[SMSAuth STATE login] Submitted phone parameter 'id': %s\n", $phone || '<NONE>');
+				my $raw_phone = $req->param('id');
+				warn sprintf("[SMSAuth STATE login] Submitted phone parameter 'id': %s\n", $raw_phone || '<NONE>');
 
+				my $phone_obj = My::Number::Phone->new($raw_phone);
+				unless ($phone_obj && $phone_obj->is_valid) {
+					warn sprintf("[SMSAuth STATE login] Invalid phone number submitted: '%s'\n", $raw_phone || '<NONE>');
+					$env->{PATH_INFO} = $self->login_path;
+					return $self->app->($env);
+				}
+
+				my $normalized_phone = $phone_obj->compact;
 				my $user_is_in_db = 0;
-				if ($phone) {
-					my $quoted_phone = $dbh->quote($phone);
+
+				if ($normalized_phone) {
+					my $quoted_phone = $dbh->quote($normalized_phone);
 					my $sql_access = qq[SELECT `telephone` FROM access WHERE `enabled` = 1 AND `telephone` = $quoted_phone LIMIT 1];
 					warn sprintf("[SMSAuth DB QUERY] Executing: %s\n", $sql_access);
 					my $s2 = $dbh->prepare($sql_access);
@@ -174,9 +307,16 @@ sub login_handler {
 					my $sms_code = join('', map { int(Math::Random::Secure::rand(10)) } 1 .. 6);
 					warn sprintf("[SMSAuth STATE login] Phone verified! Generated SMS Code: %s\n", $sms_code);
 
-					my $sql_update_login = qq[UPDATE sms_auth SET `auth_state` = 'sms_code_sent', `sms_code` = ] . $dbh->quote($sms_code) . qq[, `phone` = ] . $dbh->quote($phone) . qq[, unix_time = ] . time() . qq[ WHERE cookie_token = $quoted_token];
+					my $sql_update_login = qq[UPDATE sms_auth SET `auth_state` = 'sms_code_sent', `sms_code` = ] . $dbh->quote($sms_code) . qq[, `phone` = ] . $dbh->quote($normalized_phone) . qq[, unix_time = ] . time() . qq[ WHERE cookie_token = $quoted_token];
 					warn sprintf("[SMSAuth DB EXEC] %s\n", $sql_update_login);
 					$dbh->do($sql_update_login);
+
+					# Send the SMS code notification via embedded send_notification
+					my $sms_template = $ENV{'NOTIFICATION_SMS_CODE_MESSAGE'} || 'SMS Code: {sms_code}';
+					my $sms_message  = $sms_template;
+					$sms_message =~ s/\{sms_code\}/$sms_code/g;
+
+					send_notification($req, $normalized_phone, $sms_message);
 
 					my $session_cookie = CGI::Simple::Cookie->new(
 						-name     => 'auth_token',
@@ -188,7 +328,7 @@ sub login_handler {
 					warn sprintf("[SMSAuth STATE login] Redirecting to sms_code_path (%s)\n", $self->sms_code_path);
 					return $self->redirect_with_cookie($self->sms_code_path, $session_cookie);
 				} else {
-					warn sprintf("[SMSAuth STATE login] Phone number '%s' NOT matched in access table. Re-rendering login form (%s)\n", $phone || '<NONE>', $self->login_path);
+					warn sprintf("[SMSAuth STATE login] Normalized phone '%s' NOT matched in access table. Re-rendering login form (%s)\n", $normalized_phone || '<NONE>', $self->login_path);
 					$env->{PATH_INFO} = $self->login_path;
 					return $self->app->($env);
 				}

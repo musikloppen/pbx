@@ -21,6 +21,8 @@ services:
       dockerfile: Dockerfile
     container_name: sms-auth
     hostname: sms-auth
+    extra_hosts:
+      - "postfix:10.8.0.66"
     environment:
       NOTIFICATION_SMS_CODE_MESSAGE: "SMS Code: {sms_code}"
       DB_HOST: "pbx-db"
@@ -29,6 +31,9 @@ services:
       DB_PASS: "${MYSQL_PASSWORD}"
       UPSTREAM_BACKEND: "http://web-backend:5000"
       SMTP_HOST: "${SMTP_HOST}"
+      SMTP_PORT: "${SMTP_PORT}"
+      SMTP_USER: "${SMTP_USER}"
+      SMTP_PASSWORD: "${SMTP_PASSWORD}"
       TZ: "Europe/Copenhagen"
     depends_on:
       pbx-db:
