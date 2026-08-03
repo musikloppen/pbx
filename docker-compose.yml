@@ -1,23 +1,24 @@
 services:
-# Nginx Frontend
+  # 1. Public Nginx Frontend (Entrypoint)
   web:
     image: nginx:bookworm
     container_name: web
+    hostname: web
     ports:
       - "80:80"
     volumes:
       - ./web/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./web/www:/var/www/html:ro
     depends_on:
-      - app
+      - sms-auth
     restart: always
 
-  # Perl PSGI Application Backend
-  app:
+  # 2. Perl SMSAuth Proxy & Authenticator
+  sms-auth:
     build:
       context: ./web
       dockerfile: Dockerfile
-    container_name: app
+    container_name: sms-auth
+    hostname: sms-auth
     environment:
       NOTIFICATION_SMS_CODE_MESSAGE: "SMS Code: {sms_code}"
       DB_HOST: "pbx-db"
@@ -26,6 +27,7 @@ services:
       DB_PASS: "${MYSQL_PASSWORD}"
       ASTERISK_HOST: "pbx"
       ASTERISK_AMI_PORT: "5038"
+      UPSTREAM_BACKEND: "http://web-backend:80"
       TZ: "Europe/Copenhagen"
     volumes:
       - ./web:/var/www
@@ -35,14 +37,26 @@ services:
         condition: service_healthy
       pbx:
         condition: service_started
+      web-backend:
+        condition: service_started
     restart: always
 
-  # Asterisk PBX
+  # 3. Protected Backend Web Server (Internal - Not directly exposed to internet)
+  web-backend:
+    image: nginx:bookworm
+    container_name: web-backend
+    hostname: web-backend
+    volumes:
+      - ./web/www:/usr/share/nginx/html:ro
+    restart: always
+
+  # 4. Asterisk PBX
   pbx:
     build:
       context: ./pbx
       dockerfile: Dockerfile
     container_name: pbx
+    hostname: pbx
     privileged: true
     ports:
       - "5060:5060/udp"
@@ -65,10 +79,11 @@ services:
       SMTP_HOST: "${SMTP_HOST}"
       TZ: "Europe/Copenhagen"
 
-  # MariaDB Database
+  # 5. MariaDB Database
   pbx-db:
     image: mariadb:10.5
     container_name: pbx-db
+    hostname: pbx-db
     ports:
       - "127.0.0.1:3307:3306"
     volumes:

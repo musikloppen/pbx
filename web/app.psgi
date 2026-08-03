@@ -7,29 +7,29 @@ use Plack::App::File;
 use SMSAuth;
 
 my $root_dir = '/var/www/www';
+my $backend = 'http://backend:80';
 
-# 1. Upstream backend with SSL & Host header handling
+# 1. Primary backend proxy (targets the internal backend web server)
 my $upstream_backend = Plack::App::Proxy->new(
-	remote      => 'https://loppen.dk/',
-	preserve_host => 0, # Force Host header to match remote target (loppen.dk)
+	remote => $backend,
 )->to_app;
 
-# 2. Local static file responder for login forms
+# 2. Local static file responder (for /auth/ login forms)
 my $local_file_app = Plack::App::File->new(
 	root => $root_dir
 )->to_app;
 
-# 3. Inner router: Serves /auth/ pages locally, proxies everything else
+# 3. Inner router: Serves /auth/ pages locally, proxies authenticated traffic to backend
 my $inner_app = sub {
 	my $env = shift;
 	my $path = $env->{PATH_INFO} || '/';
 
-	# Serve local authentication forms and public static assets from disk
+	# Serve local authentication forms and public static assets from local container disk
 	if ($path =~ m{^/auth/} || $path eq '/logged_out.html' || $path eq '/404.html') {
 		return $local_file_app->($env);
 	}
 
-	# Proxy authenticated requests to upstream HTTPS target
+	# Proxy authenticated requests to the internal backend service
 	return $upstream_backend->($env);
 };
 
