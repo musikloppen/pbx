@@ -1,16 +1,9 @@
 services:
   # 1. Public Nginx Frontend (Entrypoint)
   web:
-    image: nginx:bookworm
+    build: ./web
     container_name: web
     hostname: web
-    environment:
-      ASTERISK_HOST: "pbx"
-      ASTERISK_AMI_PORT: "5038"
-      ASTERISK_AMI_USER: ${ASTERISK_AMI_USER}
-      ASTERISK_AMI_PASS: ${ASTERISK_AMI_PASS}
-      GATE_1_PHONE: ${GATE_1_PHONE}
-      GATE_2_PHONE: ${GATE_2_PHONE}
     ports:
       - "80:80"
     volumes:
@@ -22,7 +15,7 @@ services:
   # 2. Perl SMSAuth Proxy & Authenticator
   sms-auth:
     build:
-      context: ./web
+      context: ./sms-auth
       dockerfile: Dockerfile
     container_name: sms-auth
     hostname: sms-auth
@@ -32,16 +25,11 @@ services:
       DB_NAME: "pbx"
       DB_USER: "pbx"
       DB_PASS: "${MYSQL_PASSWORD}"
-      ASTERISK_HOST: "pbx"
-      ASTERISK_AMI_PORT: "5038"
-      ASTERISK_AMI_USER: ${ASTERISK_AMI_USER}
-      ASTERISK_AMI_PASS: ${ASTERISK_AMI_PASS}
-      GATE_1_PHONE: ${GATE_1_PHONE}
-      GATE_2_PHONE: ${GATE_2_PHONE}
-      UPSTREAM_BACKEND: "http://web-backend:80"
+      UPSTREAM_BACKEND: "http://web-backend:5000"
       TZ: "Europe/Copenhagen"
     volumes:
-      - ./web:/var/www
+      - ./sms-auth:/var/www
+      - ./sms-auth/www:/var/www/www:ro
       - sms_spool:/var/www/sms_spool
     depends_on:
       pbx-db:
@@ -52,9 +40,11 @@ services:
         condition: service_started
     restart: always
 
-  # 3. Protected Backend Web Server (Internal - Not directly exposed to internet)
+  # 3. Protected Backend Application Server (Internal - Handles UI & /api/unlock)
   web-backend:
-    image: nginx:bookworm
+    build:
+      context: ./web-backend
+      dockerfile: Dockerfile
     container_name: web-backend
     hostname: web-backend
     environment:
@@ -62,10 +52,12 @@ services:
       ASTERISK_AMI_PORT: "5038"
       ASTERISK_AMI_USER: ${ASTERISK_AMI_USER}
       ASTERISK_AMI_PASS: ${ASTERISK_AMI_PASS}
+      SIP_TRUNK_CALLER_ID: ${SIP_TRUNK_CALLER_ID}
       GATE_1_PHONE: ${GATE_1_PHONE}
       GATE_2_PHONE: ${GATE_2_PHONE}
     volumes:
-      - ./web/www:/usr/share/nginx/html:ro
+      - ./web-backend/www:/var/www/html:ro
+      - ./web-backend/app.psgi:/var/www/app.psgi:ro
     restart: always
 
   # 4. Asterisk PBX

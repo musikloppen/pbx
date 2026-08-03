@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>LockServer Control</title>
+	<style>
+	body {
+		font-family: Verdana, sans-serif;
+		background: #f9f9f9;
+		color: #333;
+		text-align: center;
+		margin-top: 40px;
+	}
+	b {
+		display: block;
+		font-size: 24px;
+		margin-bottom: 20px;
+	}
+	.btn-group {
+		display: flex;
+		justify-content: center;
+		gap: 16px;
+	}
+	button {
+		font-size: 18px;
+		width: 150px;
+		height: 48px;
+		cursor: pointer;
+		font-weight: bold;
+	}
+	#status {
+		margin-top: 24px;
+		font-size: 16px;
+		font-weight: bold;
+		min-height: 24px;
+	}
+	.success { color: #2e7d32; }  /* Green: Gate Unlocked */
+	.locked  { color: #555555; }  /* Dark Gray: Gate Relocked */
+	.error   { color: #d32f2f; }  /* Red: Error / Failed */
+	.busy    { color: #ed6c02; }  /* Orange: Calling / Unlocking... */
+	</style>
+</head>
+<body>
+	<b>Gate Control</b>
+	<div class="btn-group">
+		<button id="gate1Btn" onclick="unlockGate(1)">Gate 1</button>
+		<button id="gate2Btn" onclick="unlockGate(2)">Gate 2</button>
+	</div>
+	<div id="status"></div>
+
+	<script>
+	let unlockTimer = null;
+	let resetTimer = null;
+
+	async function unlockGate(gateNum) {
+		const btn1 = document.getElementById('gate1Btn');
+		const btn2 = document.getElementById('gate2Btn');
+		const status = document.getElementById('status');
+
+		if (unlockTimer) clearTimeout(unlockTimer);
+		if (resetTimer) clearTimeout(resetTimer);
+
+		btn1.disabled = true;
+		btn2.disabled = true;
+		status.className = 'busy';
+		status.innerText = `Unlocking Gate ${gateNum}...`;
+
+		try {
+			const response = await fetch('/api/unlock', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Accept': 'application/json'
+				},
+				body: JSON.stringify({ gate: gateNum })
+			});
+
+			let data = {};
+			try {
+				data = await response.json();
+			} catch (e) {}
+
+			if (response.ok && data.status === 'ok') {
+				const openTimeMs = (data.open_time || 3) * 1000;
+
+				status.className = 'success';
+				status.innerText = `Gate ${gateNum} Unlocked (${data.user || 'Authenticated'})`;
+
+				unlockTimer = setTimeout(() => {
+					status.className = 'locked';
+					status.innerText = `Gate ${gateNum} Locked`;
+					btn1.disabled = false;
+					btn2.disabled = false;
+
+					resetTimer = setTimeout(() => {
+						status.className = '';
+						status.innerText = '';
+					}, 2000);
+				}, openTimeMs);
+
+			} else {
+				status.className = 'error';
+				status.innerText = data.error || `Error (${response.status})`;
+				btn1.disabled = false;
+				btn2.disabled = false;
+			}
+		} catch (err) {
+			status.className = 'error';
+			status.innerText = 'Network error';
+			btn1.disabled = false;
+			btn2.disabled = false;
+		}
+	}
+	</script>
+</body>
+</html>
