@@ -40,6 +40,7 @@ USER root
 
 COPY ./sip.conf /etc/asterisk/sip.conf
 COPY ./extensions.conf /etc/asterisk/extensions.conf
+COPY ./manager.conf /etc/asterisk/manager.conf
 COPY ./rtp.conf /etc/asterisk/rtp.conf
 COPY ./indications.conf /etc/asterisk/indications.conf
 COPY ./allowed_caller_id.pl /var/lib/asterisk/allowed_caller_id.pl
@@ -56,6 +57,7 @@ COPY ./docker-entrypoint.sh /docker-entrypoint.sh
 
 RUN chown asterisk:asterisk /etc/asterisk/sip.conf
 RUN chown asterisk:asterisk /etc/asterisk/extensions.conf
+RUN chown asterisk:asterisk /etc/asterisk/manager.conf
 RUN chown asterisk:asterisk /etc/asterisk/rtp.conf
 RUN chown asterisk:asterisk /etc/asterisk/indications.conf
 RUN chown asterisk:asterisk /var/lib/asterisk/allowed_caller_id.pl

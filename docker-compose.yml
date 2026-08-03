@@ -4,6 +4,13 @@ services:
     image: nginx:bookworm
     container_name: web
     hostname: web
+    environment:
+      ASTERISK_HOST: "pbx"
+      ASTERISK_AMI_PORT: "5038"
+      ASTERISK_AMI_USER: ${ASTERISK_AMI_USER}
+      ASTERISK_AMI_PASS: ${ASTERISK_AMI_PASS}
+      GATE_1_PHONE: ${GATE_1_PHONE}
+      GATE_2_PHONE: ${GATE_2_PHONE}
     ports:
       - "80:80"
     volumes:
@@ -27,6 +34,10 @@ services:
       DB_PASS: "${MYSQL_PASSWORD}"
       ASTERISK_HOST: "pbx"
       ASTERISK_AMI_PORT: "5038"
+      ASTERISK_AMI_USER: ${ASTERISK_AMI_USER}
+      ASTERISK_AMI_PASS: ${ASTERISK_AMI_PASS}
+      GATE_1_PHONE: ${GATE_1_PHONE}
+      GATE_2_PHONE: ${GATE_2_PHONE}
       UPSTREAM_BACKEND: "http://web-backend:80"
       TZ: "Europe/Copenhagen"
     volumes:
@@ -46,6 +57,13 @@ services:
     image: nginx:bookworm
     container_name: web-backend
     hostname: web-backend
+    environment:
+      ASTERISK_HOST: "pbx"
+      ASTERISK_AMI_PORT: "5038"
+      ASTERISK_AMI_USER: ${ASTERISK_AMI_USER}
+      ASTERISK_AMI_PASS: ${ASTERISK_AMI_PASS}
+      GATE_1_PHONE: ${GATE_1_PHONE}
+      GATE_2_PHONE: ${GATE_2_PHONE}
     volumes:
       - ./web/www:/usr/share/nginx/html:ro
     restart: always
@@ -70,6 +88,8 @@ services:
       MYSQL_DATABASE: "pbx"
       MYSQL_USER: "pbx"
       MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
+      ASTERISK_AMI_USER: ${ASTERISK_AMI_USER}
+      ASTERISK_AMI_PASS: ${ASTERISK_AMI_PASS}
       SIP_TRUNK_USERNAME: "${SIP_TRUNK_USERNAME}"
       SIP_TRUNK_SECRET: "${SIP_TRUNK_SECRET}"
       SIP_TRUNK_HOST: "${SIP_TRUNK_HOST}"
