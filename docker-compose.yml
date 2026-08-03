@@ -4,6 +4,8 @@ services:
     build: ./web
     container_name: web
     hostname: web
+    environment:
+      TZ: "Europe/Copenhagen"
     ports:
       - "80:80"
     volumes:
@@ -26,11 +28,8 @@ services:
       DB_USER: "pbx"
       DB_PASS: "${MYSQL_PASSWORD}"
       UPSTREAM_BACKEND: "http://web-backend:5000"
+      SMTP_HOST: "${SMTP_HOST}"
       TZ: "Europe/Copenhagen"
-    volumes:
-      - ./sms-auth:/var/www
-      - ./sms-auth/www:/var/www/www:ro
-      - sms_spool:/var/www/sms_spool
     depends_on:
       pbx-db:
         condition: service_healthy
@@ -55,6 +54,7 @@ services:
       SIP_TRUNK_CALLER_ID: ${SIP_TRUNK_CALLER_ID}
       GATE_1_PHONE: ${GATE_1_PHONE}
       GATE_2_PHONE: ${GATE_2_PHONE}
+      TZ: "Europe/Copenhagen"
     volumes:
       - ./web-backend/www:/var/www/html:ro
       - ./web-backend/app.psgi:/var/www/app.psgi:ro
@@ -88,7 +88,6 @@ services:
       SIP_TRUNK_CALLER_ID: "${SIP_TRUNK_CALLER_ID}"
       GATE_1_PHONE: "${GATE_1_PHONE}"
       GATE_2_PHONE: "${GATE_2_PHONE}"
-      SMTP_HOST: "${SMTP_HOST}"
       TZ: "Europe/Copenhagen"
 
   # 5. MariaDB Database
@@ -118,4 +117,3 @@ services:
 
 volumes:
   db_data:
-  sms_spool:

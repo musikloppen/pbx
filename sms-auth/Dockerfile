@@ -22,12 +22,9 @@ RUN cpanm -n Net::SMTP
 
 WORKDIR /var/www
 
-# COPY files into container image so it works even without host volume mounts
 COPY app.psgi /var/www/app.psgi
 COPY SMSAuth.pm /var/www/SMSAuth.pm
-COPY www /var/www/www
-
-RUN mkdir -p /var/www/sms_spool && chmod 777 /var/www/sms_spool
+COPY www /var/www
 
 EXPOSE 5000
 
