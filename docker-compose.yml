@@ -1,13 +1,13 @@
 services:
   # 1. Public Nginx Frontend (Entrypoint)
-  web:
+  pbx-web:
     build: ./web
-    container_name: web
-    hostname: web
+    container_name: pbx-web
+    hostname: pbx-web
     environment:
       TZ: "Europe/Copenhagen"
     ports:
-      - "80:80"
+      - "8084:80"
     volumes:
       - ./web/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
