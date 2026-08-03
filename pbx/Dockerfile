@@ -44,7 +44,6 @@ COPY ./extensions.conf /etc/asterisk/extensions.conf
 COPY ./manager.conf /etc/asterisk/manager.conf
 COPY ./rtp.conf /etc/asterisk/rtp.conf
 COPY ./indications.conf /etc/asterisk/indications.conf
-COPY ./My /usr/local/share/perl5/My
 COPY ./allowed_caller_id.pl /var/lib/asterisk/allowed_caller_id.pl
 COPY ./log.pl /var/lib/asterisk/log.pl
 COPY ./smstools_send.pl /var/lib/asterisk/smstools_send.pl
@@ -62,7 +61,6 @@ RUN chown asterisk:asterisk /etc/asterisk/extensions.conf
 RUN chown asterisk:asterisk /etc/asterisk/manager.conf
 RUN chown asterisk:asterisk /etc/asterisk/rtp.conf
 RUN chown asterisk:asterisk /etc/asterisk/indications.conf
-RUN chown -R root:staff /usr/local/share/perl5/My
 RUN chown asterisk:asterisk /var/lib/asterisk/allowed_caller_id.pl
 RUN chown asterisk:asterisk /var/lib/asterisk/log.pl
 RUN chown asterisk:asterisk /var/lib/asterisk/smstools_send.pl
