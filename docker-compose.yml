@@ -128,5 +128,25 @@ services:
       MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
       TZ: "Europe/Copenhagen"
 
+  # 6. Cron Service for Cleanup Tasks
+  pbx-cron:
+    build:
+      context: ./cron
+      dockerfile: Dockerfile
+    container_name: pbx-cron
+    hostname: pbx-cron
+    restart: always
+    depends_on:
+      pbx-db:
+        condition: service_healthy
+    environment:
+      DB_HOST: "pbx-db"
+      DB_PORT: "3306"
+      DB_NAME: "pbx"
+      DB_USER: "pbx"
+      DB_PASS: "${MYSQL_PASSWORD}"
+      DEBUG: "${DEBUG:-0}"
+      TZ: "Europe/Copenhagen"
+
 volumes:
   db_data:
