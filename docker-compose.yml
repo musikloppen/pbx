@@ -19,8 +19,8 @@ services:
   # 2. Perl SMSAuth Proxy & Authenticator
   sms-auth:
     build:
-      context: ./sms-auth
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./sms-auth/Dockerfile
     container_name: sms-auth
     hostname: sms-auth
     extra_hosts:
@@ -71,8 +71,8 @@ services:
   # 4. Asterisk PBX
   pbx:
     build:
-      context: ./pbx
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./pbx/Dockerfile
     container_name: pbx
     hostname: pbx
     privileged: true

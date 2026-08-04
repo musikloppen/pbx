@@ -24,10 +24,13 @@ RUN cpanm -n Net::SMTP
 
 WORKDIR /var/www
 
-COPY My /var/www/My
-COPY SMSAuth.pm /var/www/SMSAuth.pm
-COPY app.psgi /var/www/app.psgi
-COPY www /var/www/www
+# Copy shared library from root context
+COPY ./lib/My /var/www/My
+
+# Copy sms-auth service files
+COPY ./sms-auth/SMSAuth.pm /var/www/SMSAuth.pm
+COPY ./sms-auth/app.psgi /var/www/app.psgi
+COPY ./sms-auth/www /var/www/www
 
 EXPOSE 5000
 

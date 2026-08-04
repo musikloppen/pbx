@@ -1,5 +1,24 @@
+# Git tracking
 .git
-db_data/*
+.gitignore
+.dockerignore
+README.md
+
+# Database state and backups
+db_data/
+*.sql
+*.sql.gz
+*.sql.bz2
+
+# Secrets & Local Environment Configs
+.env
+.env*
+openvpn/
+pbx/openvpn/
+
+# Compose files and documentation
+docker-compose*.yml
+
+# Operating system / IDE files
+.DS_Store
 **/.DS_Store
-mysql_backup.sql.bz2
-docker-compose.yml

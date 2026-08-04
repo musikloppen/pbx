@@ -1,7 +1,11 @@
-.git
-db_data/*
-**/.DS_Store
-openvpn/*
+# Docker database storage
+db_data/
+
+# Environment files and backups
 .env
-.env~
-pbx/openvpn/*
+.env*
+!.env.example
+
+# OS metadata files
+.DS_Store
+**/.DS_Store

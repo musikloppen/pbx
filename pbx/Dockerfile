@@ -38,20 +38,23 @@ RUN apt-get update && apt-get install -y \
 
 USER root
 
-COPY ./sip.conf /etc/asterisk/sip.conf
-COPY ./extensions.conf /etc/asterisk/extensions.conf
-COPY ./manager.conf /etc/asterisk/manager.conf
-COPY ./rtp.conf /etc/asterisk/rtp.conf
-COPY ./indications.conf /etc/asterisk/indications.conf
-COPY ./allowed_caller_id.pl /var/lib/asterisk/allowed_caller_id.pl
-COPY ./log.pl /var/lib/asterisk/log.pl
-COPY ./notify_user.pl /var/lib/asterisk/notify_user.pl
-COPY ./gate1.call /var/lib/asterisk/gate1.call
-COPY ./gate2.call /var/lib/asterisk/gate2.call
-COPY ./press_one_or_two.gsm /usr/share/asterisk/sounds/custom/press_one_or_two.gsm
-COPY ./gate1.gsm /usr/share/asterisk/sounds/custom/gate1.gsm
-COPY ./gate2.gsm /usr/share/asterisk/sounds/custom/gate2.gsm
-COPY ./docker-entrypoint.sh /docker-entrypoint.sh
+# Copy shared Perl module into system @INC
+COPY ./lib/My /usr/share/perl5/My
+
+COPY ./pbx/sip.conf /etc/asterisk/sip.conf
+COPY ./pbx/extensions.conf /etc/asterisk/extensions.conf
+COPY ./pbx/manager.conf /etc/asterisk/manager.conf
+COPY ./pbx/rtp.conf /etc/asterisk/rtp.conf
+COPY ./pbx/indications.conf /etc/asterisk/indications.conf
+COPY ./pbx/allowed_caller_id.pl /var/lib/asterisk/allowed_caller_id.pl
+COPY ./pbx/log.pl /var/lib/asterisk/log.pl
+COPY ./pbx/notify_user.pl /var/lib/asterisk/notify_user.pl
+COPY ./pbx/gate1.call /var/lib/asterisk/gate1.call
+COPY ./pbx/gate2.call /var/lib/asterisk/gate2.call
+COPY ./pbx/press_one_or_two.gsm /usr/share/asterisk/sounds/custom/press_one_or_two.gsm
+COPY ./pbx/gate1.gsm /usr/share/asterisk/sounds/custom/gate1.gsm
+COPY ./pbx/gate2.gsm /usr/share/asterisk/sounds/custom/gate2.gsm
+COPY ./pbx/docker-entrypoint.sh /docker-entrypoint.sh
 
 RUN chown asterisk:asterisk /etc/asterisk/sip.conf
 RUN chown asterisk:asterisk /etc/asterisk/extensions.conf
