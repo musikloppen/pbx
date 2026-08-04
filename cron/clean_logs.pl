@@ -22,7 +22,7 @@ sub log_die {
 
 log_info("Starting DB cleanup task...");
 
-# Read connection parameters from environment (sourced via /etc/cron_env in crontab)
+# Read connection parameters from environment
 my $db_host = $ENV{DB_HOST} || 'pbx-db';
 my $db_port = $ENV{DB_PORT} || 3306;
 my $db_name = $ENV{DB_NAME} || 'pbx';
@@ -50,7 +50,7 @@ unless ($dbh) {
 log_info("Connected to MariaDB ($db_name at $db_host:$db_port)");
 
 # -------------------------------------------------------------------------
-# 1. Clean Stale sms_auth Entries
+# Clean Stale sms_auth Entries
 # -------------------------------------------------------------------------
 log_info("Cleaning sms_auth table...");
 
@@ -84,24 +84,6 @@ if (defined $del_sent && $del_sent > 0) {
 my $total_sms_deleted = ($del_new || 0) + ($del_login || 0) + ($del_sent || 0);
 if ($total_sms_deleted == 0) {
 	log_info("No stale sms_auth entries found.");
-}
-
-# -------------------------------------------------------------------------
-# 2. Delete Expired Guest Access Entries
-# -------------------------------------------------------------------------
-log_info("Cleaning expired guest access entries...");
-
-my $rows_deleted = $dbh->do(qq[
-	DELETE FROM access 
-	WHERE `admin` = 'guest' 
-	  AND `expire_at` IS NOT NULL 
-	  AND `expire_at` < NOW()
-]);
-
-if (defined $rows_deleted && $rows_deleted > 0) {
-	log_info("Deleted $rows_deleted expired guest access entry/entries.");
-} else {
-	log_info("No expired guest access entries found.");
 }
 
 $dbh->disconnect();
