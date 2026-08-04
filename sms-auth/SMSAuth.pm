@@ -30,6 +30,25 @@ use Encode qw(decode is_utf8);
 use My::Number::Phone;
 
 # -------------------------------------------------------------------------
+# Embedded Helper: Write Event to 'log' table in DB
+# -------------------------------------------------------------------------
+sub _log_event {
+	my ($dbh, $caller_id, $event) = @_;
+	return unless $dbh && $event;
+
+	eval {
+		my $sth = $dbh->prepare(qq[
+			INSERT INTO log (caller_id, event, unix_time)
+			VALUES (?, ?, UNIX_TIMESTAMP())
+		]);
+		$sth->execute($caller_id, $event);
+	};
+	if ($@) {
+		warn "[SMSAuth LOG DB ERROR] Failed to insert log entry: $@\n";
+	}
+}
+
+# -------------------------------------------------------------------------
 # Embedded Helper: Send SMS via Configured SMTP Server
 # -------------------------------------------------------------------------
 sub send_notification {
@@ -248,12 +267,13 @@ sub login_handler {
 
 	my $quoted_token = $dbh->quote($passed_cookie_token || $cookie_token);
 	
-	my $sql_session_check = qq[SELECT `auth_state` FROM sms_auth WHERE cookie_token LIKE $quoted_token LIMIT 1];
+	my $sql_session_check = qq[SELECT `auth_state`, `phone` FROM sms_auth WHERE cookie_token LIKE $quoted_token LIMIT 1];
 	my $sth = $dbh->prepare($sql_session_check);
 	$sth->execute;
 
 	if (my $d = $sth->fetchrow_hashref) {
 		my $state = lc($d->{auth_state} || '');
+		my $phone = $d->{phone};
 		warn sprintf("[SMSAuth STATE] Found existing session token. Current auth_state: '%s'\n", $state);
 
 		# 1. Fully Authenticated Access
@@ -280,6 +300,7 @@ sub login_handler {
 				my $phone_obj = My::Number::Phone->new($raw_phone);
 				unless ($phone_obj && $phone_obj->is_valid) {
 					warn sprintf("[SMSAuth STATE login] Invalid phone number submitted: '%s'\n", $raw_phone || '<NONE>');
+					_log_event($dbh, $raw_phone, 'web_login_failed_invalid_phone');
 					$env->{PATH_INFO} = $self->login_path;
 					return $self->app->($env);
 				}
@@ -303,6 +324,8 @@ sub login_handler {
 					my $sql_update_login = qq[UPDATE sms_auth SET `auth_state` = 'sms_code_sent', `sms_code` = ] . $dbh->quote($sms_code) . qq[, `phone` = ] . $dbh->quote($normalized_phone) . qq[, unix_time = ] . time() . qq[ WHERE cookie_token = $quoted_token];
 					$dbh->do($sql_update_login);
 
+					_log_event($dbh, $normalized_phone, 'web_sms_code_sent');
+
 					# Send the SMS code notification via embedded send_notification
 					my $sms_template = $ENV{'NOTIFICATION_SMS_CODE_MESSAGE'} || 'SMS Code: {sms_code}';
 					my $sms_message  = $sms_template;
@@ -321,6 +344,7 @@ sub login_handler {
 					return $self->redirect_with_cookie($self->sms_code_path, $session_cookie);
 				} else {
 					warn sprintf("[SMSAuth STATE login] Normalized phone '%s' NOT matched in access table. Re-rendering login form (%s)\n", $normalized_phone || '<NONE>', $self->login_path);
+					_log_event($dbh, $normalized_phone, 'web_login_failed_unauthorized_phone');
 					$env->{PATH_INFO} = $self->login_path;
 					return $self->app->($env);
 				}
@@ -351,10 +375,12 @@ sub login_handler {
 					my $sql_update_verified = qq[UPDATE sms_auth SET `auth_state` = 'sms_code_verified', `session` = ] . ($stay_logged_in ? 0 : 1) . qq[, unix_time = ] . time() . qq[ WHERE cookie_token = $quoted_token];
 					$dbh->do($sql_update_verified);
 
+					_log_event($dbh, $phone, 'web_login_success');
 					$self->log_admin_event($dbh, $req, 'login', $quoted_token);
 					return $self->redirect_with_cookie($cd->{orig_uri}, $auth_cookie);
 				} else {
 					warn sprintf("[SMSAuth STATE sms_code_sent] Invalid SMS code. Internal forward to sms_code_path (%s)\n", $self->sms_code_path);
+					_log_event($dbh, $phone, 'web_login_failed_invalid_sms_code');
 					$env->{PATH_INFO} = $self->sms_code_path;
 					return $self->app->($env);
 				}
@@ -409,7 +435,14 @@ sub logout_handler {
 
 	if ($passed_cookie_token) {
 		my $quoted = $dbh->quote($passed_cookie_token);
+		
+		# Fetch phone number before deleting session to record in log table
+		my $sth = $dbh->prepare(qq[SELECT `phone` FROM sms_auth WHERE cookie_token = $quoted LIMIT 1]);
+		$sth->execute();
+		my ($phone) = $sth->fetchrow_array();
+
 		$self->log_admin_event($dbh, $req, 'logout', $quoted);
+		_log_event($dbh, $phone, 'web_logout');
 
 		my $sql_delete_session = qq[DELETE FROM sms_auth WHERE cookie_token = $quoted];
 		my $rows = $dbh->do($sql_delete_session);
