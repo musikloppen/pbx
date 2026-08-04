@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
+set -e
 
-mysql -h 127.0.0.1 -u root -p$MYSQL_ROOT_PASSWORD pbx < /pbx.sql &&
+echo "[SETUP] Importing initial schema into 'pbx' database..."
+mysql -h 127.0.0.1 -u root -p"$MYSQL_ROOT_PASSWORD" pbx < /pbx.sql
 
-echo "GRANT SELECT,INSERT,UPDATE,DELETE ON root.* TO '*'@'%' IDENTIFIED BY '$MYSQL_PASSWORD'" | mysql -h 127.0.0.1 -u root -p$MYSQL_ROOT_PASSWORD &&
-echo "GRANT SELECT,INSERT,UPDATE,DELETE ON nabovarme.* TO 'pbx'@'%' IDENTIFIED BY '$MYSQL_PASSWORD'" | mysql -h 127.0.0.1 -u root -p$MYSQL_ROOT_PASSWORD &&
+echo "[SETUP] Granting privileges to user 'pbx' on database 'pbx'..."
+mysql -h 127.0.0.1 -u root -p"$MYSQL_ROOT_PASSWORD" <<EOF
+GRANT ALL PRIVILEGES ON pbx.* TO 'pbx'@'%' IDENTIFIED BY '$MYSQL_PASSWORD';
+FLUSH PRIVILEGES;
+EOF
 
-echo "FLUSH PRIVILEGES" | mysql -h 127.0.0.1 -u root -p$MYSQL_ROOT_PASSWORD
-
-mysql_upgrade -h 127.0.0.1 -u root -p$MYSQL_ROOT_PASSWORD
-
-echo "import existing db by running:
-	docker cp mysql_backup.sql.bz2 pbx-db:/tmp/	
-	docker exec -it pbx-db /pbx_import.sh
-"
+echo "[SETUP] Database initialization completed successfully."
+echo ""
+echo "To import an existing database backup, run:"
+echo "  docker cp mysql_backup.sql.bz2 pbx-db:/tmp/"
+echo "  docker exec -it pbx-db /pbx_import.sh"

@@ -1,15 +1,28 @@
 ## Build details
 
-cp docker-compose.yml.example docker-compose.yml
+Copy the example environment configuration file:
 
-and edit login and password stuff
+```bash
+cp .env.example .env
+```
 
-docker-compose up --build
+Edit `.env` to set passwords, port bindings, and service credentials.
 
-To initialize db (only do it first time!):
+Build and start the container stack:
 
-docker exec -it db /pbx_setup.sh
+```bash
+docker compose up -d --build
+```
 
-docker cp mysql_backup.sql.bz2 db:/tmp/
+To initialize the database (only required on first setup):
 
-docker exec -it db /nabovarme_import.sh
+```bash
+docker exec -it pbx-db /pbx_setup.sh
+```
+
+To restore or import a database backup:
+
+```bash
+docker cp mysql_backup.sql.bz2 pbx-db:/tmp/
+docker exec -it pbx-db /pbx_import.sh
+```
