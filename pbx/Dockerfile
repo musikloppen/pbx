@@ -34,7 +34,6 @@ RUN apt-get update && apt-get install -y \
 	procps \
 	lsof \
 	tzdata \
-	openvpn \
 	asterisk
 
 USER root
@@ -53,7 +52,6 @@ COPY ./gate2.call /var/lib/asterisk/gate2.call
 COPY ./press_one_or_two.gsm /usr/share/asterisk/sounds/custom/press_one_or_two.gsm
 COPY ./gate1.gsm /usr/share/asterisk/sounds/custom/gate1.gsm
 COPY ./gate2.gsm /usr/share/asterisk/sounds/custom/gate2.gsm
-COPY ./openvpn /etc/openvpn
 COPY ./docker-entrypoint.sh /docker-entrypoint.sh
 
 RUN chown asterisk:asterisk /etc/asterisk/sip.conf

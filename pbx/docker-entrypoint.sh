@@ -65,7 +65,6 @@ perl -pi -e 's/\$GATE_2_PHONE/$ENV{GATE_2_PHONE}/g' /var/lib/asterisk/gate2.call
 # 7. Start services
 echo "[ENTRYPOINT] Starting services..."
 service asterisk start
-service openvpn start
 
 # 8. Run notification daemon script
 /var/lib/asterisk/notify_user.pl
