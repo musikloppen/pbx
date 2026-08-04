@@ -45,7 +45,6 @@ COPY ./rtp.conf /etc/asterisk/rtp.conf
 COPY ./indications.conf /etc/asterisk/indications.conf
 COPY ./allowed_caller_id.pl /var/lib/asterisk/allowed_caller_id.pl
 COPY ./log.pl /var/lib/asterisk/log.pl
-COPY ./smstools_send.pl /var/lib/asterisk/smstools_send.pl
 COPY ./notify_user.pl /var/lib/asterisk/notify_user.pl
 COPY ./gate1.call /var/lib/asterisk/gate1.call
 COPY ./gate2.call /var/lib/asterisk/gate2.call
@@ -61,7 +60,6 @@ RUN chown asterisk:asterisk /etc/asterisk/rtp.conf
 RUN chown asterisk:asterisk /etc/asterisk/indications.conf
 RUN chown asterisk:asterisk /var/lib/asterisk/allowed_caller_id.pl
 RUN chown asterisk:asterisk /var/lib/asterisk/log.pl
-RUN chown asterisk:asterisk /var/lib/asterisk/smstools_send.pl
 RUN chown asterisk:asterisk /var/lib/asterisk/notify_user.pl
 RUN chown asterisk:asterisk /var/lib/asterisk/gate1.call
 RUN chown asterisk:asterisk /var/lib/asterisk/gate2.call

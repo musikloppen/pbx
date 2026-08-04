@@ -35,6 +35,7 @@ services:
       SMTP_USER: "${SMTP_USER}"
       SMTP_PASSWORD: "${SMTP_PASSWORD}"
       TZ: "Europe/Copenhagen"
+      DEBUG: "${DEBUG:-0}"
     depends_on:
       pbx-db:
         condition: service_healthy
@@ -65,7 +66,7 @@ services:
       - ./web-backend/app.psgi:/var/www/app.psgi:ro
     restart: always
 
-  # 4. Asterisk PBX
+# 4. Asterisk PBX
   pbx:
     build:
       context: ./pbx
@@ -81,6 +82,7 @@ services:
       - pbx-db
     restart: always
     environment:
+      DEBUG: "${DEBUG:-0}"
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
       MYSQL_DATABASE: "pbx"
       MYSQL_USER: "pbx"
@@ -93,6 +95,10 @@ services:
       SIP_TRUNK_CALLER_ID: "${SIP_TRUNK_CALLER_ID}"
       GATE_1_PHONE: "${GATE_1_PHONE}"
       GATE_2_PHONE: "${GATE_2_PHONE}"
+      SMTP_HOST: "${SMTP_HOST}"
+      SMTP_PORT: "${SMTP_PORT}"
+      SMTP_USER: "${SMTP_USER}"
+      SMTP_PASSWORD: "${SMTP_PASSWORD}"
       TZ: "Europe/Copenhagen"
 
   # 5. MariaDB Database
