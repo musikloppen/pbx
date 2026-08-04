@@ -5,3 +5,4 @@ mysql_backup.sql.bz2
 openvpn/*
 .env
 .env~
+pbx/openvpn/*
