@@ -154,8 +154,6 @@ sub _get_dbh {
 	my $db_user = $ENV{DB_USER} || 'pbx';
 	my $db_pass = $ENV{DB_PASS} || '';
 
-	warn sprintf("[SMSAuth DB] Connecting to DBI:mysql:database=%s;host=%s as user %s...\n", $db_name, $db_host, $db_user);
-
 	my $dbh = DBI->connect(
 		"DBI:mysql:database=$db_name;host=$db_host",
 		$db_user,
@@ -165,8 +163,6 @@ sub _get_dbh {
 
 	if (!$dbh) {
 		warn sprintf("[SMSAuth DB ERROR] Connection failed: %s\n", $DBI::errstr || 'Unknown error');
-	} else {
-		warn sprintf("[SMSAuth DB] Connected successfully (Handle: %s)\n", $dbh);
 	}
 
 	return $dbh;
@@ -253,7 +249,6 @@ sub login_handler {
 	my $quoted_token = $dbh->quote($passed_cookie_token || $cookie_token);
 	
 	my $sql_session_check = qq[SELECT `auth_state` FROM sms_auth WHERE cookie_token LIKE $quoted_token LIMIT 1];
-	warn sprintf("[SMSAuth DB QUERY] Executing: %s\n", $sql_session_check);
 	my $sth = $dbh->prepare($sql_session_check);
 	$sth->execute;
 
@@ -274,7 +269,6 @@ sub login_handler {
 		if ($req->path_info eq $self->login_path) {
 			if ($state eq 'new') {
 				my $sql_update_new = qq[UPDATE sms_auth SET auth_state = 'login', unix_time = ] . time() . qq[ WHERE cookie_token = $quoted_token];
-				warn sprintf("[SMSAuth DB EXEC] %s\n", $sql_update_new);
 				$dbh->do($sql_update_new);
 			}
 
@@ -296,7 +290,6 @@ sub login_handler {
 				if ($normalized_phone) {
 					my $quoted_phone = $dbh->quote($normalized_phone);
 					my $sql_access = qq[SELECT `telephone` FROM access WHERE `enabled` = 1 AND `telephone` = $quoted_phone LIMIT 1];
-					warn sprintf("[SMSAuth DB QUERY] Executing: %s\n", $sql_access);
 					my $s2 = $dbh->prepare($sql_access);
 					$s2->execute;
 					$user_is_in_db = $s2->rows;
@@ -308,7 +301,6 @@ sub login_handler {
 					warn sprintf("[SMSAuth STATE login] Phone verified! Generated SMS Code: %s\n", $sms_code);
 
 					my $sql_update_login = qq[UPDATE sms_auth SET `auth_state` = 'sms_code_sent', `sms_code` = ] . $dbh->quote($sms_code) . qq[, `phone` = ] . $dbh->quote($normalized_phone) . qq[, unix_time = ] . time() . qq[ WHERE cookie_token = $quoted_token];
-					warn sprintf("[SMSAuth DB EXEC] %s\n", $sql_update_login);
 					$dbh->do($sql_update_login);
 
 					# Send the SMS code notification via embedded send_notification
@@ -350,7 +342,6 @@ sub login_handler {
 				my $auth_cookie = CGI::Simple::Cookie->new(%$cookie_opts)->as_string;
 
 				my $sql_verify_code = qq[SELECT `sms_code`, `orig_uri` FROM sms_auth WHERE `cookie_token` LIKE $quoted_token AND `sms_code` LIKE ] . $dbh->quote($sms_code) . qq[ LIMIT 1];
-				warn sprintf("[SMSAuth DB QUERY] Executing: %s\n", $sql_verify_code);
 				my $c_sth = $dbh->prepare($sql_verify_code);
 				$c_sth->execute;
 
@@ -358,7 +349,6 @@ sub login_handler {
 					warn sprintf("[SMSAuth STATE sms_code_sent] SMS code MATCHED! Target orig_uri: %s\n", $cd->{orig_uri} || $self->default_path);
 
 					my $sql_update_verified = qq[UPDATE sms_auth SET `auth_state` = 'sms_code_verified', `session` = ] . ($stay_logged_in ? 0 : 1) . qq[, unix_time = ] . time() . qq[ WHERE cookie_token = $quoted_token];
-					warn sprintf("[SMSAuth DB EXEC] %s\n", $sql_update_verified);
 					$dbh->do($sql_update_verified);
 
 					$self->log_admin_event($dbh, $req, 'login', $quoted_token);
@@ -396,7 +386,6 @@ sub login_handler {
 			INSERT INTO sms_auth (cookie_token, auth_state, orig_uri, remote_host, user_agent, unix_time)
 			VALUES (] . $dbh->quote($cookie_token) . qq[, 'new', ] . $dbh->quote($target_uri) . qq[, ] . $dbh->quote($remote_host) . qq[, ] . $dbh->quote($user_agent) . qq[, ] . time() . qq[)
 		];
-		warn sprintf("[SMSAuth DB EXEC] %s\n", $sql_insert_session);
 		$dbh->do($sql_insert_session);
 
 		return $self->redirect_with_cookie($self->login_path, $set_cookie_header);
@@ -423,7 +412,6 @@ sub logout_handler {
 		$self->log_admin_event($dbh, $req, 'logout', $quoted);
 
 		my $sql_delete_session = qq[DELETE FROM sms_auth WHERE cookie_token = $quoted];
-		warn sprintf("[SMSAuth DB EXEC] %s\n", $sql_delete_session);
 		my $rows = $dbh->do($sql_delete_session);
 		warn sprintf("[SMSAuth DB RESULT] Deleted %s row(s)\n", $rows // '0');
 	}
@@ -458,7 +446,6 @@ sub log_admin_event {
 		  AND a.telephone = s.phone
 		LIMIT 1
 	];
-	warn sprintf("[SMSAuth DB QUERY] Executing: %s\n", $sql_admin_check);
 	my $sth = $dbh->prepare($sql_admin_check);
 	$sth->execute;
 
@@ -479,7 +466,6 @@ sub log_admin_event {
 					UNIX_TIMESTAMP()
 				)
 			];
-			warn sprintf("[SMSAuth DB EXEC] %s\n", $sql_log_insert);
 			my $rows = $dbh->do($sql_log_insert);
 			warn sprintf("[SMSAuth DB RESULT] Inserted %s row(s) into accounts_log\n", $rows // '0');
 		}
