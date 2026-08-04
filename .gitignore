@@ -1,7 +1,6 @@
 .git
 db_data/*
 **/.DS_Store
-mysql_backup.sql.bz2
 openvpn/*
 .env
 .env~
