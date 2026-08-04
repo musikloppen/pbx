@@ -1,15 +1,24 @@
-# Dockerized PBX Gate Access & SMS Authentication System
+# Dockerized PBX Gate Access & OpenResty Edge Security System
 
-A containerized Asterisk and MariaDB stack for managing telephone-operated gate access control with temporary guest permissions and web-based SMS authentication.
+A containerized Asterisk and MariaDB stack for telephone-operated gate access control with temporary guest permissions, web-based SMS authentication, and an OpenResty (Nginx + Lua) security gateway.
 
 ## 🚀 Key Features
 
-* **Phone-Triggered Access:** Open gates automatically by calling designated phone numbers (`GATE_1_PHONE`, `GATE_2_PHONE`).
-* **Caller ID Access Control:** Restrict gate access based on caller ID matching stored phone numbers in MariaDB.
-* **SMS 2FA Authentication (`sms_auth`):** Authenticate web interface logins using SMS verification codes.
-* **Timed Guest Permissions:** Grant temporary gate access with start and expiration timestamps (`access` table).
-* **Automated Maintenance Daemon (`pbx-cron`):** Nightly background cron job to purge stale SMS sessions and maintain database health.
-* **Containerized Stack:** Built with `docker compose` for simple setup, volume persistence, and environment-driven configuration.
+### 📞 PBX & Access Control
+* **Phone-Triggered Gate Access:** Open physical gates automatically by calling designated phone numbers (`GATE_1_PHONE`, `GATE_2_PHONE`).
+* **Caller ID Access Verification:** Restrict gate triggering based on caller ID matching stored phone numbers in MariaDB.
+* **SMS 2FA Authentication (`sms_auth`):** Authenticate web interface users via SMS verification codes.
+* **Timed Guest Permissions:** Issue temporary access windows with start and expiration timestamps (`access` table).
+* **Automated Maintenance Daemon (`pbx-cron`):** Nightly background script to purge stale SMS sessions and maintain database health.
+
+### 🛡️ OpenResty Edge Security (Lua)
+* **DNSBL Real-Time Blacklist Filter (`dnsbl_check.lua`):** 
+  * Checks client IPs against Spamhaus (SBL/XBL) and SpamCop DNSBL providers.
+  * Features 1-hour positive and 30-minute negative `ngx.shared` caching to minimize DNS queries.
+  * Lazy-loads dynamic IP whitelists from text files (`/dnsbl_whitelist/whitelist.txt`).
+* **Exponential Backoff Rate Limiting (`rate_limit.lua`):**
+  * Tracks request velocity per IP and URI path using shared memory.
+  * Implements progressively doubling block delays (up to 60s max) upon limit breaches, complete with standard `429 Too Many Requests` status and `Retry-After` HTTP headers.
 
 ---
 
