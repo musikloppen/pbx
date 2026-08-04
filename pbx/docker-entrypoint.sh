@@ -77,12 +77,13 @@ perl -pi -e 's/\$GATE_1_PHONE/$ENV{GATE_1_PHONE}/g' /var/lib/asterisk/gate1.call
 perl -pi -e 's/\$SIP_TRUNK_CALLER_ID/$ENV{SIP_TRUNK_CALLER_ID}/g' /var/lib/asterisk/gate2.call
 perl -pi -e 's/\$GATE_2_PHONE/$ENV{GATE_2_PHONE}/g' /var/lib/asterisk/gate2.call
 
-# 7. Start services
-echo "[ENTRYPOINT] Starting services..."
-service asterisk start
+# 7. Run notification daemon script in background
+/var/lib/asterisk/notify_user.pl &
 
-# 8. Run notification daemon script
-/var/lib/asterisk/notify_user.pl
-
-# 9. Keep container running in foreground
-tail -f /var/log/asterisk/messages /var/log/asterisk/cdr-csv/Master.csv 2>/dev/null || exec tail -f /dev/null
+# 8. Start Asterisk in foreground to pipe all call logs to stdout
+echo "[ENTRYPOINT] Starting Asterisk in foreground..."
+if [ "$DEBUG" = "1" ] || [ "$DEBUG" = "true" ]; then
+	exec asterisk -f -vvvvvvvvv -c
+else
+	exec asterisk -f -vvv -c
+fi
