@@ -52,8 +52,8 @@ else
 type=registration
 transport=transport-udp
 outbound_auth=sip-trunk-auth
-server_uri=sip:$SIP_TRUNK_HOST:5060
-client_uri=sip:$SIP_TRUNK_USERNAME@$SIP_TRUNK_HOST:5060
+server_uri=sip:$SIP_TRUNK_HOST
+client_uri=sip:$SIP_TRUNK_USERNAME@$SIP_TRUNK_HOST
 contact_user=$SIP_TRUNK_USERNAME
 endpoint=sip-trunk
 line=yes
