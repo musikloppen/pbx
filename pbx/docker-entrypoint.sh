@@ -55,7 +55,6 @@ outbound_auth=sip-trunk-auth
 server_uri=sip:$SIP_TRUNK_HOST
 client_uri=sip:$SIP_TRUNK_USERNAME@$SIP_TRUNK_HOST
 contact_user=$SIP_TRUNK_USERNAME
-contact_header=sip:$SIP_TRUNK_USERNAME@$EXTERNAL_IP:5060
 endpoint=sip-trunk
 line=yes
 retry_interval=120
@@ -64,11 +63,11 @@ max_retries=5"
 fi
 
 # 2. Replace environment variables in Asterisk PJSIP config
-perl -pi -e 's/\$EXTERNAL_IP_CONFIG/$ENV{EXTERNAL_IP_CONFIG}/g' /etc/asterisk/pjsip.conf
+perl -0777 -pi -e 's/\$EXTERNAL_IP_CONFIG/$ENV{EXTERNAL_IP_CONFIG}/g' /etc/asterisk/pjsip.conf
+perl -0777 -pi -e 's/\$PJSIP_REGISTRATION_BLOCK/$ENV{EFFECTIVE_PJSIP_REGISTRATION}/g' /etc/asterisk/pjsip.conf
 perl -pi -e 's/\$SIP_TRUNK_USERNAME/$ENV{SIP_TRUNK_USERNAME}/g' /etc/asterisk/pjsip.conf
 perl -pi -e 's/\$SIP_TRUNK_SECRET/$ENV{SIP_TRUNK_SECRET}/g' /etc/asterisk/pjsip.conf
 perl -pi -e 's/\$SIP_TRUNK_HOST/$ENV{EFFECTIVE_SIP_HOST}/g' /etc/asterisk/pjsip.conf
-perl -pi -e 's/\$PJSIP_REGISTRATION_BLOCK/$ENV{EFFECTIVE_PJSIP_REGISTRATION}/g' /etc/asterisk/pjsip.conf
 
 # 3. Replace environment variables in Asterisk Manager (AMI) config
 perl -pi -e 's/\$ASTERISK_AMI_USER/$ENV{ASTERISK_AMI_USER}/g' /etc/asterisk/manager.conf
@@ -98,7 +97,7 @@ perl -pi -e 's/\$GATE_2_PHONE/$ENV{GATE_2_PHONE}/g' /var/lib/asterisk/gate2.call
 # 7. Run notification daemon script in background
 /var/lib/asterisk/notify_user.pl &
 
-# 8. Start Asterisk in foreground to pipe all call logs to stdout
+# 8. Start Asterisk in foreground
 echo "[ENTRYPOINT] Starting Asterisk in foreground..."
 if [ "$DEBUG" = "1" ] || [ "$DEBUG" = "true" ]; then
 	exec asterisk -f -U asterisk -vvvvvvvvv
