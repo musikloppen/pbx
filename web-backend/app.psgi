@@ -39,7 +39,7 @@ sub read_ami_response {
 	return %response;
 }
 
-# Helper function to trigger Gate ring-to-open call via AMI Local Channel
+# Helper function to trigger Gate ring-to-open call via AMI
 sub trigger_ami_originate {
 	my ($gate, $caller_id) = @_;
 
@@ -48,8 +48,9 @@ sub trigger_ami_originate {
 	my $ami_user = $ENV{ASTERISK_AMI_USER} || 'pbxadmin';
 	my $ami_pass = $ENV{ASTERISK_AMI_PASS} || 'pbxpass';
 
-	my $exten   = ($gate == 2) ? 'gate2' : 'gate1';
-	my $channel = "Local/${exten}\@myphones";
+	my $gate_phone = ($gate == 2) ? $ENV{GATE_2_PHONE} : $ENV{GATE_1_PHONE};
+	my $exten      = ($gate == 2) ? 'send_gate2'      : 'send_gate1';
+	my $channel    = "PJSIP/$gate_phone\@sip-trunk";
 
 	my $socket = IO::Socket::INET->new(
 		PeerHost => $ami_host,
@@ -78,10 +79,12 @@ sub trigger_ami_originate {
 		return (0, "AMI authentication failed");
 	}
 
-	# 2. Originate Action using Application NoOp on Local Channel
+	# 2. Originate Action using PJSIP channel & outbound-gates context
 	print $socket "Action: Originate\r\n";
 	print $socket "Channel: $channel\r\n";
-	print $socket "Application: NoOp\r\n";
+	print $socket "Context: outbound-gates\r\n";
+	print $socket "Exten: $exten\r\n";
+	print $socket "Priority: 1\r\n";
 	print $socket "CallerID: $caller_id\r\n";
 	print $socket "Async: true\r\n\r\n";
 
