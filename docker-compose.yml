@@ -152,5 +152,27 @@ services:
       DEBUG: "${DEBUG:-0}"
       TZ: "Europe/Copenhagen"
 
+# Access Notification Daemon
+  pbx-notify:
+    build:
+      context: .
+      dockerfile: ./pbx-notify/Dockerfile
+    container_name: pbx-notify
+    hostname: pbx-notify
+    restart: always
+    depends_on:
+      pbx-db:
+        condition: service_healthy
+    environment:
+      DB_HOST: "pbx-db"
+      DB_PORT: "3306"
+      MYSQL_DATABASE: "pbx"
+      MYSQL_USER: "pbx"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
+      SMTP_HOST: "${SMTP_HOST}"
+      SMTP_PORT: "${SMTP_PORT}"
+      DEBUG: "${DEBUG:-0}"
+      TZ: "Europe/Copenhagen"
+
 volumes:
   db_data:
