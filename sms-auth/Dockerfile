@@ -21,10 +21,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN cpanm -n Net::SMTP
 
-WORKDIR /var/www
+# Copy shared library into standard Perl @INC search directory
+COPY ./lib/My /usr/share/perl5/My
 
-# Copy shared library from root context
-COPY ./lib/My /var/www/My
+WORKDIR /var/www
 
 # Copy sms-auth service files
 COPY ./sms-auth/SMSAuth.pm /var/www/SMSAuth.pm
