@@ -45,10 +45,13 @@ else
 	export EFFECTIVE_SIP_HOST="$SIP_TRUNK_HOST"
 	export EFFECTIVE_PJSIP_REGISTRATION="[sip-trunk-reg]
 type=registration
+transport=transport-udp
 outbound_auth=sip-trunk-auth
 server_uri=sip:$SIP_TRUNK_HOST
 client_uri=sip:$SIP_TRUNK_USERNAME@$SIP_TRUNK_HOST
 contact_user=$SIP_TRUNK_USERNAME
+endpoint=sip-trunk
+line=yes
 retry_interval=60"
 fi
 
