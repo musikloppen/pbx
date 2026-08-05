@@ -83,7 +83,7 @@ perl -pi -e 's/\$GATE_2_PHONE/$ENV{GATE_2_PHONE}/g' /var/lib/asterisk/gate2.call
 # 8. Start Asterisk in foreground to pipe all call logs to stdout
 echo "[ENTRYPOINT] Starting Asterisk in foreground..."
 if [ "$DEBUG" = "1" ] || [ "$DEBUG" = "true" ]; then
-	exec asterisk -f -vvvvvvvvv -c
+	exec asterisk -f -U asterisk -vvvvvvvvv
 else
-	exec asterisk -f -vvv -c
+	exec asterisk -f -U asterisk -vvv
 fi
