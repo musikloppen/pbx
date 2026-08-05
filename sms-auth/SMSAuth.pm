@@ -23,11 +23,8 @@ use Plack::Util::Accessor qw(
 	user_admin_access
 );
 
-use Net::SMTP;
-use Email::MIME;
-use Encode qw(decode is_utf8);
-
 use My::Number::Phone;
+use My::Utils qw( send_notify );
 
 # -------------------------------------------------------------------------
 # Embedded Helper: Write Event to 'log' table in DB
@@ -48,124 +45,6 @@ sub _log_event {
 	}
 }
 
-# -------------------------------------------------------------------------
-# Embedded Helper: Send SMS via Configured SMTP Server
-# -------------------------------------------------------------------------
-sub send_notification {
-	my ($req, $sms_number, $message) = @_;
-	return 0 unless $sms_number && $message;
-
-	eval {
-		# Validate and normalize phone number
-		my $phone_obj = My::Number::Phone->new($sms_number);
-		unless ($phone_obj && $phone_obj->is_valid) {
-			warn "[SMSAuth WARN] Cannot send SMS: Invalid phone number format '$sms_number'\n";
-			return 0;
-		}
-
-		# Strictly enforce 00 prefix formatting (e.g., 004512345678)
-		$sms_number = $phone_obj->international;
-
-		# Check DEBUG mode
-		my $debug = $ENV{DEBUG};
-		if ($debug) {
-			warn "[SMSAuth DEBUG DRY-RUN] Skipping actual SMTP dispatch. SMS to $sms_number: \"$message\"\n";
-			return 1;
-		}
-
-		my $smtp_host = $ENV{SMTP_HOST};
-		my $smtp_port = $ENV{SMTP_PORT} || 25;
-
-		unless ($smtp_host) {
-			warn "[SMSAuth WARN] Mandatory environment variable missing: SMTP_HOST\n";
-			return 0;
-		}
-
-		unless (is_utf8($message)) {
-			$message = decode('UTF-8', $message);
-		}
-
-		my $email = Email::MIME->create(
-			header_str => [
-				From    => 'meterlogger@meterlogger',
-				To      => $sms_number . '@meterlogger',
-				Subject => $message,
-			],
-			attributes => {
-				encoding     => 'quoted-printable',
-				charset      => 'UTF-8',
-				content_type => 'text/plain',
-			},
-			body => '',
-		);
-
-		my %smtp_opts = (
-			Port    => $smtp_port,
-			Timeout => 10,
-		);
-		if ($smtp_port == 465) {
-			$smtp_opts{SSL} = 1;
-		}
-
-		my $smtp = Net::SMTP->new($smtp_host, %smtp_opts);
-		unless ($smtp) {
-			warn "[SMSAuth WARN] Cannot connect to SMTP server at $smtp_host:$smtp_port\n";
-			return 0;
-		}
-
-		my $smtp_user = $ENV{SMTP_USER};
-		my $smtp_pass = $ENV{SMTP_PASSWORD};
-		if ($smtp_user && $smtp_pass) {
-			unless ($smtp->auth($smtp_user, $smtp_pass)) {
-				warn "[SMSAuth WARN] SMTP AUTH failed: " . $smtp->message() . "\n";
-				$smtp->quit();
-				return 0;
-			}
-		}
-
-		unless ($smtp->mail('meterlogger@meterlogger')) {
-			warn "[SMSAuth WARN] SMTP MAIL FROM failed: " . $smtp->message() . "\n";
-			$smtp->quit();
-			return 0;
-		}
-
-		unless ($smtp->to("$sms_number\@meterlogger")) {
-			warn "[SMSAuth WARN] SMTP RCPT TO failed: " . $smtp->message() . "\n";
-			$smtp->quit();
-			return 0;
-		}
-
-		unless ($smtp->data()) {
-			warn "[SMSAuth WARN] SMTP DATA failed: " . $smtp->message() . "\n";
-			$smtp->quit();
-			return 0;
-		}
-
-		unless ($smtp->datasend($email->as_string)) {
-			warn "[SMSAuth WARN] SMTP DATASEND failed: " . $smtp->message() . "\n";
-			$smtp->quit();
-			return 0;
-		}
-
-		unless ($smtp->dataend()) {
-			warn "[SMSAuth WARN] SMTP DATAEND failed: " . $smtp->message() . "\n";
-			$smtp->quit();
-			return 0;
-		}
-
-		$smtp->quit();
-		warn "[SMSAuth INFO] SMS sent to $sms_number via $smtp_host\n";
-		return 1;
-	};
-
-	if ($@) {
-		warn "[SMSAuth WARN] Failed to send SMS to $sms_number: $@\n";
-		return 0;
-	}
-
-	return 1;
-}
-
 # Internal DB connector reading from Docker container environment
 sub _get_dbh {
 	my $db_host = $ENV{DB_HOST} || 'pbx-db';
@@ -174,10 +53,16 @@ sub _get_dbh {
 	my $db_pass = $ENV{DB_PASS} || '';
 
 	my $dbh = DBI->connect(
-		"DBI:mysql:database=$db_name;host=$db_host",
+		"DBI:MariaDB:database=$db_name;host=$db_host",
 		$db_user,
 		$db_pass,
-		{ RaiseError => 0, PrintError => 0, AutoCommit => 1, mysql_enable_utf8 => 1 }
+		{ 
+			RaiseError             => 0, 
+			PrintError             => 0, 
+			AutoCommit             => 1, 
+			mariadb_enable_utf8    => 1,
+			mariadb_auto_reconnect => 1
+		}
 	);
 
 	if (!$dbh) {
@@ -326,12 +211,12 @@ sub login_handler {
 
 					_log_event($dbh, $normalized_phone, 'web_sms_code_sent');
 
-					# Send the SMS code notification via embedded send_notification
+					# Send the SMS code notification via shared My::Utils module
 					my $sms_template = $ENV{'NOTIFICATION_SMS_CODE_MESSAGE'} || 'SMS Code: {sms_code}';
 					my $sms_message  = $sms_template;
 					$sms_message =~ s/\{sms_code\}/$sms_code/g;
 
-					send_notification($req, $normalized_phone, $sms_message);
+					send_notify($normalized_phone, $sms_message);
 
 					my $session_cookie = CGI::Simple::Cookie->new(
 						-name     => 'auth_token',

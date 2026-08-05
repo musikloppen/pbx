@@ -23,7 +23,7 @@ my $db_user = $ENV{MYSQL_USER} || 'pbx';
 my $db_pass = $ENV{MYSQL_PASSWORD} || '';
 
 my $dbh = DBI->connect(
-	"DBI:mysql:database=$db_name;host=$db_host;port=3306",
+	"DBI:MariaDB:database=$db_name;host=$db_host;port=3306",
 	$db_user,
 	$db_pass,
 	{ RaiseError => 0, PrintError => 1, mysql_auto_reconnect => 1, mysql_enable_utf8 => 1 }

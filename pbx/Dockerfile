@@ -18,9 +18,11 @@ RUN apt-get update && apt-get install -y \
 	gcc \
 	make \
 	sed \
-	libdbd-mysql-perl \
+	libdbd-mariadb-perl \
 	libdbi-perl \
+	libemail-mime-perl \
 	libnet-smtp-server-perl \
+	libencode-perl \
 	libnumber-phone-perl \
 	default-mysql-client \
 	git \

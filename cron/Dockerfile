@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 	cron \
 	perl \
 	libdbi-perl \
-	libdbd-mysql-perl \
+	libdbd-mariadb-perl \
 	&& rm -rf /var/lib/apt/lists/*
 
 COPY crontab /etc/crontab

@@ -5,7 +5,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 	cpanminus \
 	make \
 	ca-certificates \
-	libdbd-mysql-perl \
 	libdbd-mariadb-perl \
 	libdbi-perl \
 	libplack-perl \
