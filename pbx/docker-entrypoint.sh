@@ -55,9 +55,12 @@ outbound_auth=sip-trunk-auth
 server_uri=sip:$SIP_TRUNK_HOST
 client_uri=sip:$SIP_TRUNK_USERNAME@$SIP_TRUNK_HOST
 contact_user=$SIP_TRUNK_USERNAME
+contact_header=sip:$SIP_TRUNK_USERNAME@$EXTERNAL_IP:5060
 endpoint=sip-trunk
 line=yes
-retry_interval=60"
+retry_interval=120
+forbidden_retry_interval=300
+max_retries=5"
 fi
 
 # 2. Replace environment variables in Asterisk PJSIP config
