@@ -54,8 +54,7 @@ COPY ./pbx/notify_user.pl /var/lib/asterisk/notify_user.pl
 COPY ./pbx/gate1.call /var/lib/asterisk/gate1.call
 COPY ./pbx/gate2.call /var/lib/asterisk/gate2.call
 
-# Copy custom sound files (includes both .gsm and .wav formats)
-COPY ./pbx/press_one_or_two.gsm /usr/share/asterisk/sounds/custom/press_one_or_two.gsm
+# Copy custom sound files
 COPY ./pbx/press_one_or_two.wav /usr/share/asterisk/sounds/custom/press_one_or_two.wav
 COPY ./pbx/gate1.wav /usr/share/asterisk/sounds/custom/gate1.wav
 COPY ./pbx/gate2.wav /usr/share/asterisk/sounds/custom/gate2.wav
