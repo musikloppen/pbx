@@ -8,6 +8,7 @@ use Data::Dumper;
 use POSIX qw( strftime );
 use DBI;
 
+use My::Db ();
 use My::Utils qw( send_notify );
 
 use constant ALLOW_MESSAGE          => 'You now have access to open the gates. The telephone number is: 32224307';
@@ -22,29 +23,13 @@ my $RUNNING = 1;
 $SIG{INT}  = sub { warn "[notify_user] Received SIGINT, shutting down cleanly...\n"; $RUNNING = 0; };
 $SIG{TERM} = sub { warn "[notify_user] Received SIGTERM, shutting down cleanly...\n"; $RUNNING = 0; };
 
-my $db_host = $ENV{DB_HOST} || 'pbx-db';
-my $db_name = $ENV{MYSQL_DATABASE} || $ENV{DB_NAME} || 'pbx';
-my $db_user = $ENV{MYSQL_USER}     || $ENV{DB_USER} || 'pbx';
-my $db_pass = $ENV{MYSQL_PASSWORD} || $ENV{DB_PASS} || '';
-
-my $dbi = "DBI:MariaDB:database=$db_name;host=$db_host;port=3306";
 my $dbh;
 
 warn "[notify_user] Starting daemon loop...\n";
 
 # Initial Database Connection
 while ($RUNNING && !$dbh) {
-	$dbh = DBI->connect(
-		$dbi,
-		$db_user,
-		$db_pass,
-		{ 
-			mariadb_auto_reconnect => 1, 
-			mariadb_enable_utf8    => 1, 
-			RaiseError             => 0, 
-			PrintError             => 0 
-		}
-	);
+	$dbh = My::Db::connect();
 	if (!$dbh) {
 		warn sprintf("[notify_user ERROR] DB Connection failed: %s. Retrying in 2s...\n", $DBI::errstr || 'Unknown error');
 		sleep 2;

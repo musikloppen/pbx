@@ -1,8 +1,14 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 
 use strict;
-use Data::Dumper;
+use warnings;
+use utf8;
 use DBI;
+
+use My::Db qw( connect );
+
+# Force immediate log flushing to STDOUT/STDERR
+$| = 1;
 
 my $caller_id = $ARGV[0] // '';
 
@@ -14,30 +20,52 @@ if (length($caller_id) < 8) {
 	exit 1;
 }
 
-my $dbi = 'DBI:MariaDB:database=$MYSQL_DATABASE;host=pbx-db;port=3306';
-
-my $dbh = DBI->connect($dbi, '$MYSQL_USER', '$MYSQL_PASSWORD', { mysql_auto_reconnect => 1, mysql_enable_utf8 => 1 }) || die $!;
-
-my $quoted_caller_id = $dbh->quote($caller_id);
-my $like_pattern     = $dbh->quote('%' . $caller_id);
+my $dbh = connect() or die "[allowed_caller_id FATAL] Connection failed: " . ($DBI::errstr || 'Unknown error');
 
 # Log the initial incoming call attempt
-$dbh->do(qq[INSERT INTO log (`caller_id`, `event`, `unix_time`) VALUES ($quoted_caller_id, 'called', UNIX_TIMESTAMP())]) || die $!;
+eval {
+	my $sth_log = $dbh->prepare(qq[
+		INSERT INTO log (`caller_id`, `event`, `unix_time`) 
+		VALUES (?, 'called', UNIX_TIMESTAMP())
+	]);
+	$sth_log->execute($caller_id);
+};
 
 # Query access table matching clean database telephone ending with caller_id
-my $sth = $dbh->prepare(qq[SELECT COUNT(*) FROM `access` WHERE `enabled` = 1 \
-	AND ((FROM_UNIXTIME(`start`) <= NOW() AND NOW() <= FROM_UNIXTIME(`end`)) \
-		OR ((`start` IS NULL OR `start` = 0) AND NOW() <= FROM_UNIXTIME(`end`)) \
-		OR ((`start` IS NULL OR `start` = 0) AND (`end` IS NULL OR `end` = 0))) \
-	AND REGEXP_REPLACE(`telephone`, '[^0-9]', '') LIKE $like_pattern]);
+my $like_pattern = '%' . $caller_id;
 
-$sth->execute || die $!;
+my $sth_access = $dbh->prepare(qq[
+	SELECT COUNT(*) FROM `access` 
+	WHERE `enabled` = 1 
+	  AND (
+	    (FROM_UNIXTIME(`start`) <= NOW() AND NOW() <= FROM_UNIXTIME(`end`)) 
+	    OR ((`start` IS NULL OR `start` = 0) AND NOW() <= FROM_UNIXTIME(`end`)) 
+	    OR ((`start` IS NULL OR `start` = 0) AND (`end` IS NULL OR `end` = 0))
+	  ) 
+	  AND REGEXP_REPLACE(`telephone`, '[^0-9]', '') LIKE ?
+]);
 
-if ($sth->fetchrow_array > 0) {
-	$dbh->do(qq[INSERT INTO log (`caller_id`, `event`, `unix_time`) VALUES ($quoted_caller_id, 'allowed', UNIX_TIMESTAMP())]) || die $!;
+$sth_access->execute($like_pattern);
+my ($allowed_count) = $sth_access->fetchrow_array();
+
+if ($allowed_count && $allowed_count > 0) {
+	eval {
+		my $sth_log = $dbh->prepare(qq[
+			INSERT INTO log (`caller_id`, `event`, `unix_time`) 
+			VALUES (?, 'allowed', UNIX_TIMESTAMP())
+		]);
+		$sth_log->execute($caller_id);
+	};
+	$dbh->disconnect();
 	exit 0;
-}
-else {
-	$dbh->do(qq[INSERT INTO log (`caller_id`, `event`, `unix_time`) VALUES ($quoted_caller_id, 'not allowed', UNIX_TIMESTAMP())]) || die $!;
+} else {
+	eval {
+		my $sth_log = $dbh->prepare(qq[
+			INSERT INTO log (`caller_id`, `event`, `unix_time`) 
+			VALUES (?, 'not allowed', UNIX_TIMESTAMP())
+		]);
+		$sth_log->execute($caller_id);
+	};
+	$dbh->disconnect();
 	exit 1;
 }

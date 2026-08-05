@@ -47,29 +47,7 @@ sub _log_event {
 
 # Internal DB connector reading from Docker container environment
 sub _get_dbh {
-	my $db_host = $ENV{DB_HOST} || 'pbx-db';
-	my $db_name = $ENV{DB_NAME} || 'pbx';
-	my $db_user = $ENV{DB_USER} || 'pbx';
-	my $db_pass = $ENV{DB_PASS} || '';
-
-	my $dbh = DBI->connect(
-		"DBI:MariaDB:database=$db_name;host=$db_host",
-		$db_user,
-		$db_pass,
-		{ 
-			RaiseError             => 0, 
-			PrintError             => 0, 
-			AutoCommit             => 1, 
-			mariadb_enable_utf8    => 1,
-			mariadb_auto_reconnect => 1
-		}
-	);
-
-	if (!$dbh) {
-		warn sprintf("[SMSAuth DB ERROR] Connection failed: %s\n", $DBI::errstr || 'Unknown error');
-	}
-
-	return $dbh;
+	return My::Db::connect();
 }
 
 sub prepare_app {

@@ -5,6 +5,11 @@ use warnings;
 use utf8;
 use DBI;
 
+use My::Db qw( connect );
+
+# Force immediate log flushing to STDOUT/STDERR (vital for Docker/Cron)
+$| = 1;
+
 sub log_info {
 	my $msg = shift;
 	print STDOUT "[CRON INFO] $msg\n";
@@ -22,32 +27,13 @@ sub log_die {
 
 log_info("Starting DB cleanup task...");
 
-# Read connection parameters from environment
-my $db_host = $ENV{DB_HOST} || 'pbx-db';
-my $db_port = $ENV{DB_PORT} || 3306;
-my $db_name = $ENV{DB_NAME} || 'pbx';
-my $db_user = $ENV{DB_USER} || 'pbx';
-my $db_pass = $ENV{DB_PASS} || '';
-
-my $dsn = "DBI:mysql:database=$db_name;host=$db_host;port=$db_port";
-my $dbh = DBI->connect(
-	$dsn,
-	$db_user,
-	$db_pass,
-	{
-		RaiseError           => 0,
-		PrintError           => 0,
-		AutoCommit           => 1,
-		mysql_enable_utf8    => 1,
-		mysql_auto_reconnect => 1,
-	}
-);
+my $dbh = connect();
 
 unless ($dbh) {
-	log_die("Cannot connect to database '$dsn': " . ($DBI::errstr || 'Unknown error'));
+	log_die("Cannot connect to database: " . ($DBI::errstr || 'Unknown error'));
 }
 
-log_info("Connected to MariaDB ($db_name at $db_host:$db_port)");
+log_info("Connected to MariaDB via My::Db");
 
 # -------------------------------------------------------------------------
 # Clean Stale sms_auth Entries

@@ -28,9 +28,10 @@ services:
     environment:
       NOTIFICATION_SMS_CODE_MESSAGE: "SMS Code: {sms_code}"
       DB_HOST: "pbx-db"
-      DB_NAME: "pbx"
-      DB_USER: "pbx"
-      DB_PASS: "${MYSQL_PASSWORD}"
+      DB_PORT: "3306"
+      MYSQL_DATABASE: "pbx"
+      MYSQL_USER: "pbx"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
       UPSTREAM_BACKEND: "http://web-backend:5000"
       SMTP_HOST: "${SMTP_HOST}"
       SMTP_PORT: "${SMTP_PORT}"
@@ -57,11 +58,11 @@ services:
     environment:
       ASTERISK_HOST: "pbx"
       ASTERISK_AMI_PORT: "5038"
-      ASTERISK_AMI_USER: ${ASTERISK_AMI_USER}
-      ASTERISK_AMI_PASS: ${ASTERISK_AMI_PASS}
-      SIP_TRUNK_CALLER_ID: ${SIP_TRUNK_CALLER_ID}
-      GATE_1_PHONE: ${GATE_1_PHONE}
-      GATE_2_PHONE: ${GATE_2_PHONE}
+      ASTERISK_AMI_USER: "${ASTERISK_AMI_USER}"
+      ASTERISK_AMI_PASS: "${ASTERISK_AMI_PASS}"
+      SIP_TRUNK_CALLER_ID: "${SIP_TRUNK_CALLER_ID}"
+      GATE_1_PHONE: "${GATE_1_PHONE}"
+      GATE_2_PHONE: "${GATE_2_PHONE}"
       TZ: "Europe/Copenhagen"
     volumes:
       - ./web-backend/www:/var/www/html:ro
@@ -85,13 +86,15 @@ services:
     restart: always
     environment:
       DEBUG: "${DEBUG:-0}"
+      DB_HOST: "pbx-db"
+      DB_PORT: "3306"
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
       MYSQL_DATABASE: "pbx"
       MYSQL_USER: "pbx"
       MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
-      EXTERNAL_IP: ${EXTERNAL_IP}
-      ASTERISK_AMI_USER: ${ASTERISK_AMI_USER}
-      ASTERISK_AMI_PASS: ${ASTERISK_AMI_PASS}
+      EXTERNAL_IP: "${EXTERNAL_IP}"
+      ASTERISK_AMI_USER: "${ASTERISK_AMI_USER}"
+      ASTERISK_AMI_PASS: "${ASTERISK_AMI_PASS}"
       SIP_TRUNK_USERNAME: "${SIP_TRUNK_USERNAME}"
       SIP_TRUNK_SECRET: "${SIP_TRUNK_SECRET}"
       SIP_TRUNK_HOST: "${SIP_TRUNK_HOST}"
@@ -143,9 +146,9 @@ services:
     environment:
       DB_HOST: "pbx-db"
       DB_PORT: "3306"
-      DB_NAME: "pbx"
-      DB_USER: "pbx"
-      DB_PASS: "${MYSQL_PASSWORD}"
+      MYSQL_DATABASE: "pbx"
+      MYSQL_USER: "pbx"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
       DEBUG: "${DEBUG:-0}"
       TZ: "Europe/Copenhagen"
 
