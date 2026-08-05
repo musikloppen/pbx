@@ -9,6 +9,7 @@ SIP_TRUNK_USERNAME
 SIP_TRUNK_SECRET
 SIP_TRUNK_HOST
 SIP_TRUNK_CALLER_ID
+EXTERNAL_IP
 GATE_1_PHONE
 GATE_2_PHONE
 MYSQL_DATABASE
@@ -35,6 +36,10 @@ fi
 
 echo "[ENTRYPOINT] All required environment variables are set. Applying templates..."
 
+# Format explicit NAT IP configuration from .env
+export EXTERNAL_IP_CONFIG="external_media_address=$EXTERNAL_IP
+external_signaling_address=$EXTERNAL_IP"
+
 # --- DEBUG TRUNK ISOLATION OVERRIDE ---
 if [ "$DEBUG" = "1" ] || [ "$DEBUG" = "true" ]; then
 	echo "[ENTRYPOINT DEBUG] DEBUG MODE IS ACTIVE: Neutralizing SIP registration & host to prevent kicking production!"
@@ -47,8 +52,8 @@ else
 type=registration
 transport=transport-udp
 outbound_auth=sip-trunk-auth
-server_uri=sip:$SIP_TRUNK_HOST
-client_uri=sip:$SIP_TRUNK_USERNAME@$SIP_TRUNK_HOST
+server_uri=sip:$SIP_TRUNK_HOST:5060
+client_uri=sip:$SIP_TRUNK_USERNAME@$SIP_TRUNK_HOST:5060
 contact_user=$SIP_TRUNK_USERNAME
 endpoint=sip-trunk
 line=yes
@@ -56,6 +61,7 @@ retry_interval=60"
 fi
 
 # 2. Replace environment variables in Asterisk PJSIP config
+perl -pi -e 's/\$EXTERNAL_IP_CONFIG/$ENV{EXTERNAL_IP_CONFIG}/g' /etc/asterisk/pjsip.conf
 perl -pi -e 's/\$SIP_TRUNK_USERNAME/$ENV{SIP_TRUNK_USERNAME}/g' /etc/asterisk/pjsip.conf
 perl -pi -e 's/\$SIP_TRUNK_SECRET/$ENV{SIP_TRUNK_SECRET}/g' /etc/asterisk/pjsip.conf
 perl -pi -e 's/\$SIP_TRUNK_HOST/$ENV{EFFECTIVE_SIP_HOST}/g' /etc/asterisk/pjsip.conf
