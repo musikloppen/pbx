@@ -41,7 +41,7 @@ USER root
 # Copy shared Perl module into system @INC
 COPY ./lib/My /usr/share/perl5/My
 
-COPY ./pbx/sip.conf /etc/asterisk/sip.conf
+COPY ./pbx/pjsip.conf /etc/asterisk/pjsip.conf
 COPY ./pbx/extensions.conf /etc/asterisk/extensions.conf
 COPY ./pbx/manager.conf /etc/asterisk/manager.conf
 COPY ./pbx/rtp.conf /etc/asterisk/rtp.conf
@@ -58,7 +58,7 @@ COPY ./pbx/gate1.gsm /usr/share/asterisk/sounds/custom/gate1.gsm
 COPY ./pbx/gate2.gsm /usr/share/asterisk/sounds/custom/gate2.gsm
 COPY ./pbx/docker-entrypoint.sh /docker-entrypoint.sh
 
-RUN chown asterisk:asterisk /etc/asterisk/sip.conf
+RUN chown asterisk:asterisk /etc/asterisk/pjsip.conf
 RUN chown asterisk:asterisk /etc/asterisk/extensions.conf
 RUN chown asterisk:asterisk /etc/asterisk/manager.conf
 RUN chown asterisk:asterisk /etc/asterisk/rtp.conf

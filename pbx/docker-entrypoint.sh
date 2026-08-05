@@ -39,18 +39,24 @@ echo "[ENTRYPOINT] All required environment variables are set. Applying template
 if [ "$DEBUG" = "1" ] || [ "$DEBUG" = "true" ]; then
 	echo "[ENTRYPOINT DEBUG] DEBUG MODE IS ACTIVE: Neutralizing SIP registration & host to prevent kicking production!"
 	export EFFECTIVE_SIP_HOST="127.0.0.1"
-	export EFFECTIVE_SIP_REGISTER="; registration disabled in DEBUG mode"
+	export EFFECTIVE_PJSIP_REGISTRATION="; Outbound registration disabled in DEBUG mode"
 else
 	echo "[ENTRYPOINT] PRODUCTION MODE: Enabling full trunk registration to $SIP_TRUNK_HOST"
 	export EFFECTIVE_SIP_HOST="$SIP_TRUNK_HOST"
-	export EFFECTIVE_SIP_REGISTER="register => $SIP_TRUNK_USERNAME:$SIP_TRUNK_SECRET@$SIP_TRUNK_HOST/$SIP_TRUNK_USERNAME"
+	export EFFECTIVE_PJSIP_REGISTRATION="[sip-trunk-reg]
+type=registration
+outbound_auth=sip-trunk-auth
+server_uri=sip:$SIP_TRUNK_HOST
+client_uri=sip:$SIP_TRUNK_USERNAME@$SIP_TRUNK_HOST
+contact_user=$SIP_TRUNK_USERNAME
+retry_interval=60"
 fi
 
-# 2. Replace environment variables in Asterisk SIP config
-perl -pi -e 's/\$SIP_TRUNK_USERNAME/$ENV{SIP_TRUNK_USERNAME}/g' /etc/asterisk/sip.conf
-perl -pi -e 's/\$SIP_TRUNK_SECRET/$ENV{SIP_TRUNK_SECRET}/g' /etc/asterisk/sip.conf
-perl -pi -e 's/\$SIP_TRUNK_HOST/$ENV{EFFECTIVE_SIP_HOST}/g' /etc/asterisk/sip.conf
-perl -pi -e 's/\$SIP_REGISTER_LINE/$ENV{EFFECTIVE_SIP_REGISTER}/g' /etc/asterisk/sip.conf
+# 2. Replace environment variables in Asterisk PJSIP config
+perl -pi -e 's/\$SIP_TRUNK_USERNAME/$ENV{SIP_TRUNK_USERNAME}/g' /etc/asterisk/pjsip.conf
+perl -pi -e 's/\$SIP_TRUNK_SECRET/$ENV{SIP_TRUNK_SECRET}/g' /etc/asterisk/pjsip.conf
+perl -pi -e 's/\$SIP_TRUNK_HOST/$ENV{EFFECTIVE_SIP_HOST}/g' /etc/asterisk/pjsip.conf
+perl -pi -e 's/\$PJSIP_REGISTRATION_BLOCK/$ENV{EFFECTIVE_PJSIP_REGISTRATION}/g' /etc/asterisk/pjsip.conf
 
 # 3. Replace environment variables in Asterisk Manager (AMI) config
 perl -pi -e 's/\$ASTERISK_AMI_USER/$ENV{ASTERISK_AMI_USER}/g' /etc/asterisk/manager.conf
