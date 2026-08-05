@@ -1,6 +1,7 @@
-Channel: PJSIP/$GATE_1_PHONE@sip-trunk
-Application: Playback
-Data: hello
+Channel: PJSIP/sip-trunk/sip:$GATE_1_PHONE
+Context: outbound-gates
+Extension: send_gate1
+Priority: 1
 CallerID: $SIP_TRUNK_CALLER_ID
 MaxRetries: 0
 RetryTime: 10
