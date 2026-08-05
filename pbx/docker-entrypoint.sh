@@ -12,9 +12,9 @@ SIP_TRUNK_CALLER_ID
 EXTERNAL_IP
 GATE_1_PHONE
 GATE_2_PHONE
-MYSQL_DATABASE
-MYSQL_USER
-MYSQL_PASSWORD
+DB_NAME
+DB_USER
+DB_PASSWORD
 ASTERISK_AMI_USER
 ASTERISK_AMI_PASS
 "
@@ -79,13 +79,13 @@ perl -pi -e 's/\$GATE_2_PHONE/$ENV{GATE_2_PHONE}/g' /etc/asterisk/extensions.con
 perl -pi -e 's/\$DEBUG/$ENV{DEBUG}/g' /etc/asterisk/extensions.conf
 
 # 5. Replace environment variables in Perl scripts
-perl -pi -e 's/\$MYSQL_DATABASE/$ENV{MYSQL_DATABASE}/g' /var/lib/asterisk/allowed_caller_id.pl
-perl -pi -e 's/\$MYSQL_USER/$ENV{MYSQL_USER}/g' /var/lib/asterisk/allowed_caller_id.pl
-perl -pi -e 's/\$MYSQL_PASSWORD/$ENV{MYSQL_PASSWORD}/g' /var/lib/asterisk/allowed_caller_id.pl
+perl -pi -e 's/\$DB_NAME/$ENV{DB_NAME}/g' /var/lib/asterisk/allowed_caller_id.pl
+perl -pi -e 's/\$DB_USER/$ENV{DB_USER}/g' /var/lib/asterisk/allowed_caller_id.pl
+perl -pi -e 's/\$DB_PASSWORD/$ENV{DB_PASSWORD}/g' /var/lib/asterisk/allowed_caller_id.pl
 
-perl -pi -e 's/\$MYSQL_DATABASE/$ENV{MYSQL_DATABASE}/g' /var/lib/asterisk/log.pl
-perl -pi -e 's/\$MYSQL_USER/$ENV{MYSQL_USER}/g' /var/lib/asterisk/log.pl
-perl -pi -e 's/\$MYSQL_PASSWORD/$ENV{MYSQL_PASSWORD}/g' /var/lib/asterisk/log.pl
+perl -pi -e 's/\$DB_NAME/$ENV{DB_NAME}/g' /var/lib/asterisk/log.pl
+perl -pi -e 's/\$DB_USER/$ENV{DB_USER}/g' /var/lib/asterisk/log.pl
+perl -pi -e 's/\$DB_PASSWORD/$ENV{DB_PASSWORD}/g' /var/lib/asterisk/log.pl
 
 # 6. Replace environment variables in Call files
 perl -pi -e 's/\$SIP_TRUNK_CALLER_ID/$ENV{SIP_TRUNK_CALLER_ID}/g' /var/lib/asterisk/gate1.call

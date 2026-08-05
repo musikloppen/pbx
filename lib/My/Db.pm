@@ -14,9 +14,9 @@ sub connect {
 
 	my $db_host = $ENV{DB_HOST}        || 'pbx-db';
 	my $db_port = $ENV{DB_PORT}        || 3306;
-	my $db_name = $ENV{MYSQL_DATABASE} || 'pbx';
-	my $db_user = $ENV{MYSQL_USER}     || 'pbx';
-	my $db_pass = $ENV{MYSQL_PASSWORD} || '';
+	my $db_name = $ENV{DB_NAME}        || 'pbx';
+	my $db_user = $ENV{DB_USER}     || 'pbx';
+	my $db_pass = $ENV{DB_PASSWORD}    || '';
 
 	my $raise_error = exists $opts{RaiseError} ? $opts{RaiseError} : 0;
 	my $print_error = exists $opts{PrintError} ? $opts{PrintError} : 0;

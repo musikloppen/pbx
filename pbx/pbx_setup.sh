@@ -6,7 +6,7 @@ mysql -h 127.0.0.1 -u root -p"$MYSQL_ROOT_PASSWORD" pbx < /pbx.sql
 
 echo "[SETUP] Granting privileges to user 'pbx' on database 'pbx'..."
 mysql -h 127.0.0.1 -u root -p"$MYSQL_ROOT_PASSWORD" <<EOF
-GRANT ALL PRIVILEGES ON pbx.* TO 'pbx'@'%' IDENTIFIED BY '$MYSQL_PASSWORD';
+GRANT ALL PRIVILEGES ON pbx.* TO 'pbx'@'%' IDENTIFIED BY '$DB_PASSWORD';
 FLUSH PRIVILEGES;
 EOF
 

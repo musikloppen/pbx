@@ -29,9 +29,9 @@ services:
       NOTIFICATION_SMS_CODE_MESSAGE: "SMS Code: {sms_code}"
       DB_HOST: "pbx-db"
       DB_PORT: "3306"
-      MYSQL_DATABASE: "pbx"
-      MYSQL_USER: "pbx"
-      MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
+      DB_NAME: "pbx"
+      DB_USER: "pbx"
+      DB_PASSWORD: "${DB_PASSWORD}"
       UPSTREAM_BACKEND: "http://web-backend:5000"
       SMTP_HOST: "${SMTP_HOST}"
       SMTP_PORT: "${SMTP_PORT}"
@@ -88,10 +88,9 @@ services:
       DEBUG: "${DEBUG:-0}"
       DB_HOST: "pbx-db"
       DB_PORT: "3306"
-      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
-      MYSQL_DATABASE: "pbx"
-      MYSQL_USER: "pbx"
-      MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
+      DB_NAME: "pbx"
+      DB_USER: "pbx"
+      DB_PASSWORD: "${DB_PASSWORD}"
       EXTERNAL_IP: "${EXTERNAL_IP}"
       ASTERISK_AMI_USER: "${ASTERISK_AMI_USER}"
       ASTERISK_AMI_PASS: "${ASTERISK_AMI_PASS}"
@@ -126,10 +125,10 @@ services:
       timeout: 20s
       retries: 10
     environment:
-      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
       MYSQL_DATABASE: "pbx"
       MYSQL_USER: "pbx"
-      MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
+      MYSQL_PASSWORD: "${DB_PASSWORD}"
       TZ: "Europe/Copenhagen"
 
   # 6. Cron Service for Cleanup Tasks
@@ -146,9 +145,9 @@ services:
     environment:
       DB_HOST: "pbx-db"
       DB_PORT: "3306"
-      MYSQL_DATABASE: "pbx"
-      MYSQL_USER: "pbx"
-      MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
+      DB_NAME: "pbx"
+      DB_USER: "pbx"
+      DB_PASSWORD: "${DB_PASSWORD}"
       DEBUG: "${DEBUG:-0}"
       TZ: "Europe/Copenhagen"
 
