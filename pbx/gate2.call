@@ -1,4 +1,4 @@
-Channel: PJSIP/$GATE_2_PHONE@sip-trunk
+Channel: PJSIP/sip-trunk/sip:$GATE_2_PHONE
 Application: Playback
 Data: hello
 CallerID: $SIP_TRUNK_CALLER_ID
