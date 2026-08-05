@@ -47,6 +47,7 @@ COPY ./pbx/manager.conf /etc/asterisk/manager.conf
 COPY ./pbx/rtp.conf /etc/asterisk/rtp.conf
 COPY ./pbx/indications.conf /etc/asterisk/indications.conf
 COPY ./pbx/logger.conf /etc/asterisk/logger.conf
+COPY ./pbx/modules.conf /etc/asterisk/modules.conf
 COPY ./pbx/allowed_caller_id.pl /var/lib/asterisk/allowed_caller_id.pl
 COPY ./pbx/log.pl /var/lib/asterisk/log.pl
 COPY ./pbx/notify_user.pl /var/lib/asterisk/notify_user.pl
@@ -63,6 +64,7 @@ RUN chown asterisk:asterisk /etc/asterisk/manager.conf
 RUN chown asterisk:asterisk /etc/asterisk/rtp.conf
 RUN chown asterisk:asterisk /etc/asterisk/indications.conf
 RUN chown asterisk:asterisk /etc/asterisk/logger.conf
+RUN chown asterisk:asterisk /etc/asterisk/modules.conf
 RUN chown asterisk:asterisk /var/lib/asterisk/allowed_caller_id.pl
 RUN chown asterisk:asterisk /var/lib/asterisk/log.pl
 RUN chown asterisk:asterisk /var/lib/asterisk/notify_user.pl
