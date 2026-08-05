@@ -57,9 +57,7 @@ COPY ./pbx/gate2.call /var/lib/asterisk/gate2.call
 # Copy custom sound files (includes both .gsm and .wav formats)
 COPY ./pbx/press_one_or_two.gsm /usr/share/asterisk/sounds/custom/press_one_or_two.gsm
 COPY ./pbx/press_one_or_two.wav /usr/share/asterisk/sounds/custom/press_one_or_two.wav
-COPY ./pbx/gate1.gsm /usr/share/asterisk/sounds/custom/gate1.gsm
 COPY ./pbx/gate1.wav /usr/share/asterisk/sounds/custom/gate1.wav
-COPY ./pbx/gate2.gsm /usr/share/asterisk/sounds/custom/gate2.gsm
 COPY ./pbx/gate2.wav /usr/share/asterisk/sounds/custom/gate2.wav
 COPY ./pbx/docker-entrypoint.sh /docker-entrypoint.sh
 
