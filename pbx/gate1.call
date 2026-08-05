@@ -1,4 +1,4 @@
-Channel: PJSIP/sip-trunk/sip:$GATE_1_PHONE
+Channel: PJSIP/$GATE_1_PHONE@sip-trunk
 Context: outbound-gates
 Extension: send_gate1
 Priority: 1
