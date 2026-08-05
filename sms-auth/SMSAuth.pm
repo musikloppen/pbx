@@ -23,6 +23,7 @@ use Plack::Util::Accessor qw(
 	user_admin_access
 );
 
+use My::Db qw( connect );
 use My::Number::Phone;
 use My::Utils qw( send_notify );
 
