@@ -76,6 +76,8 @@ services:
       dockerfile: ./pbx/Dockerfile
     container_name: pbx
     hostname: pbx
+    extra_hosts:
+      - "postfix:10.8.0.66"
     privileged: true
     ports:
       - "5060:5060/udp"
