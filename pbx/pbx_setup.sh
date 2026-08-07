@@ -2,10 +2,10 @@
 set -e
 
 echo "[SETUP] Importing initial schema into 'pbx' database..."
-mysql -h 127.0.0.1 -u root -p"$MYSQL_ROOT_PASSWORD" pbx < /pbx.sql
+mysql -h 127.0.0.1 -u root -p"$DB_ROOT_PASSWORD" pbx < /pbx.sql
 
 echo "[SETUP] Granting privileges to user 'pbx' on database 'pbx'..."
-mysql -h 127.0.0.1 -u root -p"$MYSQL_ROOT_PASSWORD" <<EOF
+mysql -h 127.0.0.1 -u root -p"$DB_ROOT_PASSWORD" <<EOF
 GRANT ALL PRIVILEGES ON pbx.* TO 'pbx'@'%' IDENTIFIED BY '$DB_PASSWORD';
 FLUSH PRIVILEGES;
 EOF

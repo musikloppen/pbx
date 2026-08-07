@@ -53,7 +53,6 @@ COPY ./pbx/modules.conf /etc/asterisk/modules.conf
 COPY ./pbx/acl.conf /etc/asterisk/acl.conf
 COPY ./pbx/allowed_caller_id.pl /var/lib/asterisk/allowed_caller_id.pl
 COPY ./pbx/log.pl /var/lib/asterisk/log.pl
-COPY ./pbx/notify_user.pl /var/lib/asterisk/notify_user.pl
 COPY ./pbx/gate1.call /var/lib/asterisk/gate1.call
 COPY ./pbx/gate2.call /var/lib/asterisk/gate2.call
 
@@ -62,6 +61,7 @@ COPY ./pbx/press_one_or_two.wav /usr/share/asterisk/sounds/custom/press_one_or_t
 COPY ./pbx/gate1.wav /usr/share/asterisk/sounds/custom/gate1.wav
 COPY ./pbx/gate2.wav /usr/share/asterisk/sounds/custom/gate2.wav
 COPY ./pbx/docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 
 RUN chown asterisk:asterisk /etc/asterisk/pjsip.conf
 RUN chown asterisk:asterisk /etc/asterisk/extensions.conf
@@ -73,9 +73,8 @@ RUN chown asterisk:asterisk /etc/asterisk/modules.conf
 RUN chown asterisk:asterisk /etc/asterisk/acl.conf
 RUN chown asterisk:asterisk /var/lib/asterisk/allowed_caller_id.pl
 RUN chown asterisk:asterisk /var/lib/asterisk/log.pl
-RUN chown asterisk:asterisk /var/lib/asterisk/notify_user.pl
 RUN chown asterisk:asterisk /var/lib/asterisk/gate1.call
 RUN chown asterisk:asterisk /var/lib/asterisk/gate2.call
 RUN chown -R asterisk:asterisk /usr/share/asterisk/sounds/custom/
 
-CMD /docker-entrypoint.sh
+ENTRYPOINT ["/docker-entrypoint.sh"]

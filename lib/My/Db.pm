@@ -8,14 +8,13 @@ use DBI;
 use Exporter 'import';
 our @EXPORT_OK = qw( connect );
 
-# Connects to MariaDB using standardized MYSQL_* environment variables
 sub connect {
 	my (%opts) = @_;
 
 	my $db_host = $ENV{DB_HOST}        || 'pbx-db';
 	my $db_port = $ENV{DB_PORT}        || 3306;
 	my $db_name = $ENV{DB_NAME}        || 'pbx';
-	my $db_user = $ENV{DB_USER}     || 'pbx';
+	my $db_user = $ENV{DB_USER}        || 'pbx';
 	my $db_pass = $ENV{DB_PASSWORD}    || '';
 
 	my $raise_error = exists $opts{RaiseError} ? $opts{RaiseError} : 0;

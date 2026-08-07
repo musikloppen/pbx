@@ -11,9 +11,15 @@ use DBI;
 use My::Db ();
 use My::Utils qw( send_notify );
 
-use constant ALLOW_MESSAGE          => 'You now have access to open the gates. The telephone number is: 32224307';
-use constant DISALLOW_SOON_MESSAGE => 'Your access to the gate will expire DATE_TIME';
-use constant DISALLOW_MESSAGE      => 'Your access to the gate has expired';
+# Read notification templates directly from .env (with fallback defaults)
+my $allow_message = $ENV{NOTIFICATION_ALLOW_MESSAGE}
+	|| ('You now have access to open the gates.');
+
+my $disallow_soon_message_template = $ENV{NOTIFICATION_DISALLOW_SOON_MESSAGE}
+	|| 'Your access to the gate will expire DATE_TIME';
+
+my $disallow_message = $ENV{NOTIFICATION_DISALLOW_MESSAGE}
+	|| 'Your access to the gate has expired';
 
 # Force immediate log flushing to STDOUT/STDERR
 $| = 1;
@@ -48,7 +54,7 @@ while ($RUNNING) {
 				warn sprintf("[notify_user] Trying to send allow notification to %s%s\n", 
 					$d->{telephone}, ($d->{email} ? " or " . $d->{email} : ""));
 
-				if (send_notify($d->{telephone}, ALLOW_MESSAGE)) {
+				if (send_notify($d->{telephone}, $allow_message)) {
 					warn sprintf("[notify_user] Sent allow notification to %s\n", $d->{telephone});
 					$dbh->do(qq[UPDATE access SET `notification_state` = 1 WHERE `id` = ?], undef, $d->{id});
 					sleep 1;
@@ -78,10 +84,10 @@ while ($RUNNING) {
 					$d->{telephone}, ($d->{email} ? " or " . $d->{email} : ""));
 
 				my $end_string = strftime("%d.%m.%Y at %H:%M:%S", localtime($d->{end}));
-				my $disallow_soon_message = DISALLOW_SOON_MESSAGE;
-				$disallow_soon_message =~ s/DATE_TIME/$end_string/;
+				my $msg = $disallow_soon_message_template;
+				$msg =~ s/DATE_TIME/$end_string/g;
 
-				if (send_notify($d->{telephone}, $disallow_soon_message)) {
+				if (send_notify($d->{telephone}, $msg)) {
 					warn sprintf("[notify_user] Sent disallow soon notification to %s\n", $d->{telephone});
 					$dbh->do(qq[UPDATE access SET `notification_state` = 2 WHERE `id` = ?], undef, $d->{id});
 					sleep 1;
@@ -110,7 +116,7 @@ while ($RUNNING) {
 				warn sprintf("[notify_user] Trying to send expired notification to %s%s\n", 
 					$d->{telephone}, ($d->{email} ? " or " . $d->{email} : ""));
 
-				if (send_notify($d->{telephone}, DISALLOW_MESSAGE)) {
+				if (send_notify($d->{telephone}, $disallow_message)) {
 					warn sprintf("[notify_user] Sent expired notification to %s\n", $d->{telephone});
 					$dbh->do(qq[UPDATE access SET `enabled` = 0, `notification_state` = 0 WHERE `id` = ?], undef, $d->{id});
 					sleep 1;

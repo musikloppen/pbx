@@ -94,28 +94,10 @@ perl -pi -e 's/\$GATE_1_PHONE/$ENV{GATE_1_PHONE}/g' /var/lib/asterisk/gate1.call
 perl -pi -e 's/\$SIP_TRUNK_CALLER_ID/$ENV{SIP_TRUNK_CALLER_ID}/g' /var/lib/asterisk/gate2.call
 perl -pi -e 's/\$GATE_2_PHONE/$ENV{GATE_2_PHONE}/g' /var/lib/asterisk/gate2.call
 
-# 7. Run notification daemon script in background and capture PID
-echo "[ENTRYPOINT] Starting notify_user.pl daemon..."
-/var/lib/asterisk/notify_user.pl &
-NOTIFY_PID=$!
-
-# Trap termination signals to cleanly kill notify_user.pl when container stops
-cleanup() {
-	echo "[ENTRYPOINT] Received shutdown signal. Terminating notify_user.pl (PID $NOTIFY_PID)..."
-	kill -TERM "$NOTIFY_PID" 2>/dev/null
-	wait "$NOTIFY_PID" 2>/dev/null
-	echo "[ENTRYPOINT] notify_user.pl stopped cleanly."
-}
-trap cleanup INT TERM
-
-# 8. Start Asterisk (without exec so entrypoint remains PID 1 to handle trap signals)
+# 6. Start Asterisk as PID 1
 echo "[ENTRYPOINT] Starting Asterisk in foreground..."
 if [ "$DEBUG" = "1" ] || [ "$DEBUG" = "true" ]; then
-	asterisk -f -U asterisk -vvvvvvvvv &
+	exec asterisk -f -U asterisk -vvvvvvvvv
 else
-	asterisk -f -U asterisk -vvv &
+	exec asterisk -f -U asterisk -vvv
 fi
-AST_PID=$!
-
-# Wait for Asterisk to exit
-wait $AST_PID

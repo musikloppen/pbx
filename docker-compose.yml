@@ -24,7 +24,7 @@ services:
     container_name: sms-auth
     hostname: sms-auth
     extra_hosts:
-      - "postfix:10.8.0.66"
+      - "postfix:$SMS_GATEWAY"
     environment:
       NOTIFICATION_SMS_CODE_MESSAGE: "SMS Code: {sms_code}"
       DB_HOST: "pbx-db"
@@ -76,8 +76,6 @@ services:
       dockerfile: ./pbx/Dockerfile
     container_name: pbx
     hostname: pbx
-    extra_hosts:
-      - "postfix:10.8.0.66"
     privileged: true
     ports:
       - "5060:5060/udp"
@@ -114,7 +112,7 @@ services:
     container_name: pbx-db
     hostname: pbx-db
     ports:
-      - "127.0.0.1:3307:3306"
+      - "127.0.0.1:${DB_PORT_HOST:-3306}:3306"
     volumes:
       - ./pbx/my.cnf:/etc/mysql/my.cnf
       - ./db_data:/var/lib/mysql:delegated
@@ -150,6 +148,34 @@ services:
       DB_NAME: "pbx"
       DB_USER: "pbx"
       DB_PASSWORD: "${DB_PASSWORD}"
+      DEBUG: "${DEBUG:-0}"
+      TZ: "Europe/Copenhagen"
+
+# Access Notification Daemon
+  pbx-notify:
+    build:
+      context: .
+      dockerfile: ./pbx-notify/Dockerfile
+    container_name: pbx-notify
+    hostname: pbx-notify
+    extra_hosts:
+      - "postfix:$SMS_GATEWAY"
+    restart: always
+    depends_on:
+      pbx-db:
+        condition: service_healthy
+    environment:
+      DB_HOST: "pbx-db"
+      DB_PORT: "3306"
+      DB_NAME: "pbx"
+      DB_USER: "pbx"
+      DB_PASSWORD: "${DB_PASSWORD}"
+      SIP_TRUNK_CALLER_ID: "${SIP_TRUNK_CALLER_ID}"
+      NOTIFICATION_ALLOW_MESSAGE: "${NOTIFICATION_ALLOW_MESSAGE}"
+      NOTIFICATION_DISALLOW_SOON_MESSAGE: "${NOTIFICATION_DISALLOW_SOON_MESSAGE}"
+      NOTIFICATION_DISALLOW_MESSAGE: "${NOTIFICATION_DISALLOW_MESSAGE}"
+      SMTP_HOST: "${SMTP_HOST}"
+      SMTP_PORT: "${SMTP_PORT}"
       DEBUG: "${DEBUG:-0}"
       TZ: "Europe/Copenhagen"
 

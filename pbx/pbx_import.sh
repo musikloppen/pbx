@@ -13,9 +13,9 @@ fi
 echo "[IMPORT] Restoring database backup into 'pbx'..."
 
 if command -v bzcat >/dev/null 2>&1; then
-	bzcat "$SQL_FILE" | mysql -h 127.0.0.1 -u root -p"$MYSQL_ROOT_PASSWORD" pbx
+	bzcat "$SQL_FILE" | mysql -h 127.0.0.1 -u root -p"$DB_ROOT_PASSWORD" pbx
 else
-	bzip2 -dc "$SQL_FILE" | mysql -h 127.0.0.1 -u root -p"$MYSQL_ROOT_PASSWORD" pbx
+	bzip2 -dc "$SQL_FILE" | mysql -h 127.0.0.1 -u root -p"$DB_ROOT_PASSWORD" pbx
 fi
 
 echo "[IMPORT] Database import completed successfully."
